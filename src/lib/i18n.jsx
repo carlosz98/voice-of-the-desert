@@ -294,6 +294,30 @@ const ES = {
   "Reina-Valera 1909": "Reina-Valera 1909",
   "King James Version": "Versión King James",
 
+  // landing extras
+  "Good morning": "Buenos días",
+  "Good afternoon": "Buenas tardes",
+  "Good evening": "Buenas noches",
+  "I'm Felipe. Welcome, make yourself at home.": "Soy Felipe. Bienvenido, está usted en su casa.",
+  Clear: "Despejado",
+  "Clear night": "Noche despejada",
+  "Partly cloudy": "Parcialmente nublado",
+  Cloudy: "Nublado",
+  Foggy: "Niebla",
+  Drizzle: "Llovizna",
+  Rain: "Lluvia",
+  Snow: "Nieve",
+  Storms: "Tormentas",
+  Share: "Compartir",
+  "Share on WhatsApp": "Compartir por WhatsApp",
+  "Larger text": "Letra más grande",
+  "Radio sound when you press play": "Sonido de radio al darle play",
+  "Thanks for stopping by.": "Gracias por pasar.",
+  "There's always coffee and good music here.": "Aquí siempre hay café y buena música.",
+  "Come back soon.": "Vuelva pronto.",
+  "A note from Felipe": "Una nota de Felipe",
+  "Shared from Voice of the Desert": "Compartido desde La Voz del Desierto",
+
   // footer
   About: "Acerca de",
   Advertise: "Anúnciate",
@@ -340,6 +364,14 @@ export function LangProvider({ children }) {
 }
 
 export const useLang = () => useContext(LangContext);
+
+/* Felipe greets the visitor by their own time of day. */
+export function greetingFor(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 5 && h < 12) return { key: "Good morning", part: "morning" };
+  if (h >= 12 && h < 19) return { key: "Good afternoon", part: "afternoon" };
+  return { key: "Good evening", part: "night" };
+}
 
 /* EN | ES switch for the header and the mobile menu. */
 export function LangToggle({ className = "" }) {

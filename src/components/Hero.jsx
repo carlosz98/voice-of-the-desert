@@ -1,7 +1,7 @@
-import { useLang } from "../lib/i18n.jsx";
+import { greetingFor, useLang } from "../lib/i18n.jsx";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Pause, Play } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Moon, Pause, Play, Sun, Sunset } from "lucide-react";
 import { HOST, SLIDES } from "../lib/data.js";
 import { usePlayer } from "../lib/player.jsx";
 
@@ -86,6 +86,19 @@ function SandParticles() {
   );
 }
 
+const PART_ICON = { morning: Sun, afternoon: Sunset, night: Moon };
+
+function Greeting({ className = "" }) {
+  const { t } = useLang();
+  const g = greetingFor();
+  const Icon = PART_ICON[g.part];
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <Icon aria-hidden className="h-3.5 w-3.5" /> {t(g.key)}
+    </span>
+  );
+}
+
 function HostCard() {
   const { t } = useLang();
   return (
@@ -99,7 +112,7 @@ function HostCard() {
         {HOST.photo ? <img src={HOST.face} alt="" className="h-full w-full object-cover" /> : HOST.initials}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-sun">{t("Your host")}</span>
+        <Greeting className="font-mono text-[11px] uppercase tracking-[0.18em] text-sun" />
         <strong className="text-base text-cream">{HOST.name}</strong>
         <span className="text-[13px] leading-snug text-haze">{t("News, notes, music and the podcast, all with his take.")}</span>
       </span>
@@ -228,7 +241,7 @@ export default function Hero() {
       {/* headline block. The giant word sits at z-20, between the photo and
           its cut-out, so the horses / towers / hills / flowers stand in front
           of it. Everything else is z-40: always readable and clickable. */}
-      <div className="container-x relative flex flex-1 flex-col items-center pb-44 pt-28 text-center sm:pt-32">
+      <div className="container-x relative flex flex-1 flex-col items-center pb-40 pt-[128px] text-center sm:pt-[136px]">
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -307,6 +320,21 @@ export default function Hero() {
             </a>
             <a href="#listen" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</a>
           </motion.div>
+
+          {/* on phones the host card is hidden, so Felipe says hello here */}
+          <motion.a
+            href="#host"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1.1 }}
+            className="glass flex items-center gap-3 rounded-full py-1.5 pl-1.5 pr-4 text-left md:hidden"
+          >
+            <img src={HOST.face} alt="" className="h-10 w-10 flex-none rounded-full border-2 border-gold object-cover" />
+            <span className="flex flex-col leading-tight">
+              <Greeting className="font-mono text-[11px] uppercase tracking-[0.16em] text-sun" />
+              <span className="text-[13px] text-cream">{t("I'm Felipe. Welcome, make yourself at home.")}</span>
+            </span>
+          </motion.a>
         </motion.div>
       </div>
 

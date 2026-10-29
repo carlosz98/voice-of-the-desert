@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { EPISODES } from "../lib/data.js";
+import { tuneIn } from "../lib/radio.js";
 import { Reveal, SectionHead } from "./ui/Reveal.jsx";
 
 const STARS = [
@@ -26,6 +27,7 @@ export default function Podcast() {
   }, [playing]);
 
   const pick = i => {
+    tuneIn();
     setCurrent(i);
     setProgress(0);
     setPlaying(true);
@@ -73,7 +75,7 @@ export default function Podcast() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => setPlaying(p => !p)}
+              onClick={() => { if (!playing) tuneIn(); setPlaying(p => !p); }}
               aria-label={t(playing ? "Pause episode" : "Play episode")}
               className="grid h-[60px] w-[60px] flex-none place-items-center rounded-full bg-gold text-umber transition-transform duration-200 hover:scale-105 active:scale-95"
             >

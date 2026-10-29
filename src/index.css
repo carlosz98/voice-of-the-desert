@@ -26,6 +26,10 @@
     --radius: 0.875rem;
   }
 
+  html.big-text main > section:not([aria-roledescription="carousel"]),
+  html.big-text footer {
+    zoom: 1.14;
+  }
   html {
     font-size: 106.25%; /* 17px base: a little larger, easier to read */
     scroll-behavior: smooth;

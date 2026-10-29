@@ -5,6 +5,7 @@ import { HOST } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
 import { dayNumber, loadVerse, verseForDay } from "../lib/verses.js";
 import { Accent } from "./ui/Accent.jsx";
+import { WhatsAppGlyph, whatsappLink } from "./TopStrip.jsx";
 import { EASE, Reveal } from "./ui/Reveal.jsx";
 
 const TODAY = dayNumber();
@@ -114,8 +115,7 @@ export default function Verse() {
                 </span>
                 <span className="font-script text-[26px] leading-none text-rust">{t("Shared by Felipe")}</span>
               </span>
-              <span className="mx-1 hidden h-6 w-px bg-dune sm:block" aria-hidden />
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => setDay(d => Math.max(d - 1, TODAY - WEEK))}
@@ -143,6 +143,16 @@ export default function Verse() {
                   {copied ? <Check aria-hidden className="h-4 w-4 text-ochre" /> : <Copy aria-hidden className="h-4 w-4" />}
                   {copied ? t("Copied") : t("Copy verse")}
                 </button>
+                {state.text && (
+                  <a
+                    href={whatsappLink(`“${state.text}” — ${state.reference}\n\n${t("Shared from Voice of the Desert")}: ${location.origin + location.pathname}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#2B6B3F] px-4 text-sm font-semibold text-cream transition-colors hover:bg-[#245A35]"
+                  >
+                    <WhatsAppGlyph /> WhatsApp
+                  </a>
+                )}
                 {!isToday && (
                   <button type="button" onClick={() => setDay(TODAY)} className="inline-flex min-h-[44px] items-center px-2 text-sm font-bold text-ochre hover:underline">
                     {t("Back to today")}

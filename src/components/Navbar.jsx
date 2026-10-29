@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Menu, Upload } from "lucide-react";
 import { NAV } from "../lib/data.js";
 import { Sheet } from "./ui/Sheet.jsx";
+import TopStrip from "./TopStrip.jsx";
 import { LangToggle, useLang } from "../lib/i18n.jsx";
 
 export function Logo({ className = "" }) {
@@ -40,6 +41,20 @@ export default function Navbar() {
           scrolled ? "border-b border-bone/10 bg-earth/80 backdrop-blur-lg" : "border-b border-transparent"
         }`}
       >
+        <AnimatePresence initial={false}>
+          {!scrolled && (
+            <motion.div
+              key="strip"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <TopStrip />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="container-x flex h-[72px] items-center gap-6">
           <a href="#top" aria-label={t("Voice of the Desert, home")} className="text-cream">
             <Logo />

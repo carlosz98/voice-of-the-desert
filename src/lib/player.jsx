@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { TRACKS } from "./data.js";
+import { tuneIn } from "./radio.js";
 
 /* One music player for the whole page: the hero "Now playing" card,
  * the Listen section and the mini player all read and control it.
@@ -28,13 +29,17 @@ export function PlayerProvider({ children }) {
   }, [playing, track.length]);
 
   const select = useCallback(i => {
+    tuneIn();
     setIndex(i);
     setTime(0);
     setPlaying(true);
   }, []);
   const next = useCallback(() => select((index + 1) % TRACKS.length), [index, select]);
   const prev = useCallback(() => select((index - 1 + TRACKS.length) % TRACKS.length), [index, select]);
-  const toggle = useCallback(() => setPlaying(p => !p), []);
+  const toggle = useCallback(() => {
+    if (!playing) tuneIn();
+    setPlaying(p => !p);
+  }, [playing]);
 
   const value = useMemo(
     () => ({ tracks: TRACKS, index, track, playing, time, progress: time / track.length, select, next, prev, toggle }),

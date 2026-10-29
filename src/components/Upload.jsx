@@ -6,6 +6,7 @@ import { Check, FileText, Loader2, Mic, Music, UploadCloud, Video } from "lucide
 import { CurtainText, Reveal } from "./ui/Reveal.jsx";
 import { SpotlightCard } from "./ui/SpotlightCard.jsx";
 import { BlockNewsletter } from "@/components/ui/newsletter-signup-ticket";
+import { HOST } from "../lib/data.js";
 
 const KINDS = [
   { id: "video", label: "Video", icon: Video, accept: "video/*", hint: "MP4 or MOV" },
@@ -198,6 +199,22 @@ export default function Upload() {
             emailLabel={t("Email address")}
           />
         </motion.div>
+
+        {/* a goodbye in his handwriting before the page ends */}
+        <motion.figure
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 mt-20 flex max-w-[640px] flex-col items-center gap-3"
+          aria-label={t("A note from Felipe")}
+        >
+          <img src={HOST.face} alt="" className="h-16 w-16 rounded-full border-2 border-gold object-cover shadow-lg" />
+          <blockquote className="font-script text-[clamp(30px,4.2vw,46px)] leading-[1.15] text-loam">
+            {t("Thanks for stopping by.")} {t("There's always coffee and good music here.")} {t("Come back soon.")}
+          </blockquote>
+          <figcaption className="font-script text-[clamp(30px,3.6vw,40px)] text-rust">— Felipe</figcaption>
+        </motion.figure>
       </div>
     </section>
   );
