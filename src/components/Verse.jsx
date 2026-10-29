@@ -73,7 +73,7 @@ export default function Verse() {
             </p>
 
             <div className="relative min-h-[150px]" aria-live="polite" aria-busy={state.status === "loading"}>
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="popLayout" initial={false}>
                 {state.status === "loading" && (
                   <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-3 pt-2">
                     <span className="sr-only">{t("Loading today's verse…")}</span>
