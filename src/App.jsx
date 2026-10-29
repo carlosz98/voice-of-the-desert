@@ -5,6 +5,7 @@ import Watch from "./components/Watch.jsx";
 import Listen from "./components/Listen.jsx";
 import Host from "./components/Host.jsx";
 import Podcast from "./components/Podcast.jsx";
+import Verse from "./components/Verse.jsx";
 import News from "./components/News.jsx";
 import Upload from "./components/Upload.jsx";
 import Footer from "./components/Footer.jsx";
@@ -37,6 +38,7 @@ export default function App() {
         <Watch />
         <Listen />
         <Host />
+        <Verse />
         <Podcast />
         <News />
         <Upload />

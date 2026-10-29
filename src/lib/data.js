@@ -187,6 +187,7 @@ export const NAV = [
   { href: "#watch", label: "Watch" },
   { href: "#listen", label: "Listen" },
   { href: "#host", label: "Felipe" },
+  { href: "#verse", label: "Verse" },
   { href: "#podcast", label: "Podcast" },
   { href: "#news", label: "News" },
 ];

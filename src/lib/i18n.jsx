@@ -276,6 +276,24 @@ const ES = {
   Join: "Unirme",
   "Email address": "Correo electrónico",
 
+  // daily verse
+  Verse: "Versículo",
+  "Every morning": "Cada mañana",
+  "A word for": "Una palabra para",
+  today: "hoy",
+  Today: "Hoy",
+  "Loading today's verse…": "Cargando el versículo de hoy…",
+  "We couldn't load the verse right now.": "No pudimos cargar el versículo en este momento.",
+  "Try again": "Intentar de nuevo",
+  "Shared by Felipe": "Compartido por Felipe",
+  "Previous day": "Día anterior",
+  "Next day": "Día siguiente",
+  "Copy verse": "Copiar versículo",
+  Copied: "Copiado",
+  "Back to today": "Volver a hoy",
+  "Reina-Valera 1909": "Reina-Valera 1909",
+  "King James Version": "Versión King James",
+
   // footer
   About: "Acerca de",
   Advertise: "Anúnciate",

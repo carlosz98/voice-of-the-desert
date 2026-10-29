@@ -1,7 +1,7 @@
 import { useLang } from "../lib/i18n.jsx";
 import { Accent } from "./ui/Accent.jsx";
 import { useId, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Check, FileText, Loader2, Mic, Music, UploadCloud, Video } from "lucide-react";
 import { CurtainText, Reveal } from "./ui/Reveal.jsx";
 import { SpotlightCard } from "./ui/SpotlightCard.jsx";
@@ -13,6 +13,26 @@ const KINDS = [
   { id: "podcast", label: "Podcast", icon: Mic, accept: "audio/*,video/*", hint: "Audio or video episode" },
   { id: "news", label: "News tip", icon: FileText, accept: ".pdf,.doc,.docx,image/*", hint: "Text, PDF or a photo" },
 ];
+
+/* Layered ridges of the Sierra, far to near. The front ridge is the footer's
+ * color so the page runs straight into it. Each layer rises a different
+ * amount as you scroll in, which gives the range some depth. */
+const RIDGES = [
+  { fill: "#D9C4A2", rise: 70, d: "M0 118 L70 96 L150 108 L240 70 L320 92 L410 58 L500 86 L590 64 L690 30 L790 72 L880 54 L980 84 L1070 46 L1160 76 L1250 40 L1340 70 L1440 52 L1440 260 L0 260 Z" },
+  { fill: "#C8A272", rise: 48, d: "M0 140 L90 112 L170 128 L270 88 L360 118 L450 96 L540 124 L640 84 L730 110 L830 76 L930 116 L1030 92 L1120 122 L1220 86 L1320 114 L1440 92 L1440 260 L0 260 Z" },
+  { fill: "#A87848", rise: 30, d: "M0 170 C 60 150 110 138 180 150 S 300 120 380 140 S 500 168 580 146 S 720 112 800 136 S 930 162 1010 144 S 1150 118 1230 140 S 1360 160 1440 136 L1440 260 L0 260 Z" },
+  { fill: "#6E4A2E", rise: 16, d: "M0 198 C 90 176 170 170 260 184 S 420 206 520 188 S 700 160 800 180 S 980 204 1080 186 S 1260 166 1350 182 S 1420 190 1440 186 L1440 260 L0 260 Z" },
+  { fill: "#231A15", rise: 0, d: "M0 232 C 120 214 240 210 360 222 S 600 240 720 226 S 960 206 1080 220 S 1320 238 1440 222 L1440 260 L0 260 Z" },
+];
+
+function Ridge({ ridge, progress, reduce }) {
+  const y = useTransform(progress, [0, 1], [reduce ? 0 : ridge.rise, 0]);
+  return (
+    <motion.svg aria-hidden className="absolute inset-x-0 bottom-0 h-full w-full" viewBox="0 0 1440 260" preserveAspectRatio="none" style={{ y }}>
+      <path d={ridge.d} fill={ridge.fill} />
+    </motion.svg>
+  );
+}
 
 const CLOUDS = [
   ["6%", 10, 180, "#F4EADA"], ["9%", 0, 90, "#F4EADA"], ["30%", 50, 240, "#EFE2CB"],
@@ -26,6 +46,9 @@ export default function Upload() {
   const [state, setState] = useState("idle"); // idle | sending | sent
   const [error, setError] = useState("");
   const fileRef = useRef(null);
+  const sectionRef = useRef(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end end"] });
   const id = useId();
   const current = KINDS.find(k => k.id === kind);
 
@@ -43,23 +66,17 @@ export default function Upload() {
   };
 
   return (
-    <section id="upload" aria-labelledby="up-h" className="paper relative scroll-mt-20 overflow-hidden bg-sand text-umber">
+    <section ref={sectionRef} id="upload" aria-labelledby="up-h" className="paper relative scroll-mt-20 overflow-hidden bg-sand text-umber">
       <div aria-hidden className="absolute left-0 top-10 h-[120px] w-[200%] animate-drift">
         {CLOUDS.map(([l, t, w, c], i) => (
           <span key={i} className="absolute h-[34px] rounded-full" style={{ left: l, top: t, width: w, background: c }} />
         ))}
       </div>
-      <svg aria-hidden className="absolute inset-x-0 bottom-0 h-[150px] w-full" viewBox="0 0 1440 150" preserveAspectRatio="none">
-        <path d="M0 70 L 1440 64 L 1440 150 L 0 150 Z" fill="#C9A06A" />
-        <g fill="#D99A2B">
-          {[[60, 80, 34], [120, 88, 26], [340, 84, 30], [600, 90, 38], [650, 80, 22], [880, 86, 28], [1120, 82, 36], [1170, 92, 24], [1390, 84, 32]].map(([cx, cy, r]) => <circle key={cx} cx={cx} cy={cy} r={r} />)}
-        </g>
-        <g fill="#A9772C">
-          {[[240, 112, 30], [760, 118, 34], [1290, 116, 28]].map(([cx, cy, r]) => <circle key={cx} cx={cx} cy={cy} r={r} />)}
-        </g>
-      </svg>
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[clamp(150px,19vw,280px)]">
+        {RIDGES.map((r, i) => <Ridge key={i} ridge={r} progress={scrollYProgress} reduce={reduce} />)}
+      </div>
 
-      <div className="container-x relative flex flex-col items-center gap-6 pb-48 pt-28 text-center">
+      <div className="container-x relative flex flex-col items-center gap-6 pb-[clamp(190px,22vw,320px)] pt-28 text-center">
         <Reveal as="span" className="eyebrow flex items-center gap-2.5 text-rust"><span aria-hidden>✦</span> {t("Chapter")} {t("five")} · {t("Upload")}</Reveal>
         <h2 id="up-h" className="h-display text-[clamp(30px,5vw,68px)]">
           <CurtainText delay={0.05}>
