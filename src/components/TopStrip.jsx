@@ -80,31 +80,31 @@ export default function TopStrip() {
   return (
     <div className="border-b border-bone/10 text-[13px] text-haze">
       <div className="container-x flex h-10 items-center gap-3">
-        <span className="flex min-w-0 items-center gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap sm:gap-2">
           <MapPin aria-hidden className="h-3.5 w-3.5 flex-none text-gold" />
-          <span className="truncate">
-            <span className="font-semibold text-bone">Chihuahua</span>
-            <span aria-hidden> · </span>
-            <span className="tabular-nums">{time}</span>
-            {weather && (
-              <>
-                <span aria-hidden> · </span>
-                <span className="inline-flex items-center gap-1.5 align-middle">
-                  <Icon aria-hidden className="h-4 w-4 text-sun" />
-                  <span className="tabular-nums">{weather.temp}°C</span>
-                  <span className="hidden sm:inline">{t(label)}</span>
-                </span>
-              </>
-            )}
-          </span>
+          <span className="font-semibold text-bone">Chihuahua</span>
+          <span aria-hidden className="hidden text-dust sm:inline">·</span>
+          <span className="flex-none tabular-nums">{time}</span>
+          {weather && (
+            <>
+              <span aria-hidden className="hidden text-dust sm:inline">·</span>
+              {/* the weather never shrinks; the city name gives way first */}
+              <span className="inline-flex flex-none items-center gap-1.5" title={t(label)}>
+                <Icon aria-hidden className="h-4 w-4 text-sun" />
+                <span className="font-semibold tabular-nums text-bone">{weather.temp}°C</span>
+                <span className="hidden md:inline">{t(label)}</span>
+                <span className="sr-only md:hidden">{t(label)}</span>
+              </span>
+            </>
+          )}
         </span>
 
-        <span className="ml-auto flex flex-none items-center gap-1">
+        <span className="ml-auto flex flex-none items-center gap-0 sm:gap-1">
           <a
             href={whatsappLink(shareText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 font-semibold text-haze transition-colors hover:text-gold"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full px-2 font-semibold sm:px-2.5 text-haze transition-colors hover:text-gold"
           >
             <WhatsAppGlyph /> <span className="hidden sm:inline">{t("Share")}</span>
             <span className="sr-only sm:hidden">{t("Share on WhatsApp")}</span>
@@ -114,7 +114,7 @@ export default function TopStrip() {
             onClick={() => setBig(b => !b)}
             aria-pressed={big}
             title={t("Larger text")}
-            className={`inline-flex h-9 items-baseline gap-0.5 rounded-full px-2.5 pt-1.5 font-display font-semibold transition-colors ${big ? "bg-gold text-umber" : "text-haze hover:text-gold"}`}
+            className={`inline-flex h-9 items-baseline gap-0.5 rounded-full px-2 pt-1.5 sm:px-2.5 font-display font-semibold transition-colors ${big ? "bg-gold text-umber" : "text-haze hover:text-gold"}`}
           >
             <span className="text-[12px]">A</span>
             <span className="text-[17px] leading-none">A</span>
@@ -125,7 +125,7 @@ export default function TopStrip() {
             onClick={() => setSound(s => { setRadioSound(!s); return !s; })}
             aria-pressed={sound}
             title={t("Radio sound when you press play")}
-            className="grid h-9 w-9 place-items-center rounded-full text-haze transition-colors hover:text-gold"
+            className="hidden h-9 w-9 place-items-center rounded-full text-haze transition-colors hover:text-gold min-[380px]:grid"
           >
             {sound ? <Volume2 aria-hidden className="h-4 w-4" /> : <VolumeX aria-hidden className="h-4 w-4" />}
             <span className="sr-only">{t("Radio sound when you press play")}</span>
