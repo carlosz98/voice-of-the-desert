@@ -6,6 +6,7 @@ import { ARTICLES, DESK, HOST, LEAD_STORY, NEWS_FILTERS, NEXT_POST } from "../li
 import { EASE, ImageReveal, Reveal, SectionHead } from "./ui/Reveal.jsx";
 import { SpotlightCard } from "./ui/SpotlightCard.jsx";
 import { useLang } from "../lib/i18n.jsx";
+import { NewBadge, isFresh } from "./ui/NewBadge.jsx";
 
 function Avatar({ size = 40, className = "" }) {
   return (
@@ -289,6 +290,7 @@ export default function News() {
             <button type="button" onClick={() => setOpen(LEAD_STORY)} aria-label={`${t("Read:")} ${t(LEAD_STORY.title)}`} className="group absolute inset-0 block overflow-hidden">
               <img src={LEAD_STORY.photo} alt={t(LEAD_STORY.alt)} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" style={{ objectPosition: LEAD_STORY.pos }} />
               <span className="absolute left-4 top-4 rounded-md bg-bone px-2.5 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-umber">{t("Lead story")}</span>
+              {isFresh(LEAD_STORY.ago) && <NewBadge className="absolute right-4 top-4 px-2.5 py-1 text-xs" />}
             </button>
           </ImageReveal>
           <div className="flex min-w-0 flex-[1_1_440px] flex-col gap-4">
@@ -354,7 +356,7 @@ export default function News() {
                         <img src={a.photo} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" style={{ objectPosition: a.pos }} />
                       </button>
                       <div className="flex flex-1 flex-col gap-3 p-5">
-                        <span className="font-mono text-xs font-semibold uppercase tracking-[0.15em] text-ochre">{t(a.category)} · {t(a.ago)}</span>
+                        <span className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.15em] text-ochre">{t(a.category)} · {t(a.ago)}{isFresh(a.ago) && <NewBadge />}</span>
                         <h3 className="font-display text-[20px] font-semibold leading-snug">
                           <button type="button" onClick={() => setOpen(a)} className="text-left hover:text-ochre">{t(a.title)}</button>
                         </h3>

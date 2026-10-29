@@ -71,6 +71,7 @@ export default {
           "75%": { transform: "translate(2%,2%)" },
         },
         drift: { to: { transform: "translateX(-50%)" } },
+        shine: { "0%,70%": { transform: "translateX(0)" }, "100%": { transform: "translateX(420%)" } },
       },
       animation: {
         marquee: "marquee 50s linear infinite",
@@ -79,6 +80,7 @@ export default {
         ping2: "ping2 1.8s ease-out infinite",
         grain: "grain .6s steps(2) infinite",
         drift: "drift 120s linear infinite",
+        shine: "shine 4s ease-in-out infinite",
       },
     },
   },

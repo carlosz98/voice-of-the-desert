@@ -6,6 +6,8 @@ import { Pause, Play } from "lucide-react";
 import { EPISODES } from "../lib/data.js";
 import { tuneIn } from "../lib/radio.js";
 import { Reveal, SectionHead } from "./ui/Reveal.jsx";
+import { NewBadge } from "./ui/NewBadge.jsx";
+import NextEpisode from "./NextEpisode.jsx";
 
 const STARS = [
   [8, 14, 2, 0], [22, 30, 3, 0.8], [35, 10, 2, 1.6], [51, 22, 2, 0.4], [63, 8, 3, 2.2],
@@ -61,6 +63,7 @@ export default function Podcast() {
           <Reveal as="p" className="max-w-[520px] text-[17px] leading-relaxed text-[#D9C9B2]">
             {t("Conversations with people from everywhere: their stories, their music, and what the news leaves out. Hosted by Felipe Lerma.")}
           </Reveal>
+          <NextEpisode />
           <motion.p key={ep.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-serif text-[26px] italic leading-snug text-bone">
             Ep. {ep.number} — {t(ep.title)}
           </motion.p>
@@ -82,7 +85,7 @@ export default function Podcast() {
               {playing ? <Pause aria-hidden className="h-5 w-5" fill="currentColor" /> : <Play aria-hidden className="ml-0.5 h-5 w-5" fill="currentColor" />}
             </button>
             <div className="flex flex-col gap-1">
-              <strong className="text-[17px]">{current === 0 ? t("Latest episode") : `${t("Episode")} ${ep.number}`}</strong>
+              <strong className="flex items-center gap-2 text-[17px]">{current === 0 ? t("Latest episode") : `${t("Episode")} ${ep.number}`}{current === 0 && <NewBadge />}</strong>
               <span className="font-mono text-[13px] tabular-nums text-dust">{t(playing ? "Playing" : "Paused")} · {ep.length}</span>
             </div>
           </div>

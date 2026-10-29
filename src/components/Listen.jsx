@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { fmt, usePlayer } from "../lib/player.jsx";
 import { Reveal, SectionHead } from "./ui/Reveal.jsx";
+import { NewBadge } from "./ui/NewBadge.jsx";
 
 const RIDGE =
   "M0 80 C 30 40 50 70 80 50 S 130 10 160 45 S 210 75 240 30 S 300 5 330 50 S 380 80 410 35 S 470 15 500 55 S 560 70 600 40 L 600 90 L 0 90 Z";
@@ -101,7 +102,7 @@ export default function Listen() {
                     <span className="w-8 pl-1 font-display text-sm font-bold tabular-nums text-ochre">{String(i + 1).padStart(2, "0")}</span>
                     <img src={tr.photo} alt="" loading="lazy" className="h-11 w-11 flex-none rounded-lg object-cover" style={{ objectPosition: tr.pos }} />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <strong className="truncate text-base">{t(tr.title)}</strong>
+                      <strong className="flex min-w-0 items-center gap-2 text-base"><span className="truncate">{t(tr.title)}</span>{tr.isNew && <NewBadge className="flex-none" />}</strong>
                       <span className="truncate text-sm text-bark">{t(tr.artist)}</span>
                     </span>
                     <span className="pr-1 font-mono text-[13px] tabular-nums text-bark">

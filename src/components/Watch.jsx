@@ -3,6 +3,7 @@ import { Accent } from "./ui/Accent.jsx";
 import { Play } from "lucide-react";
 import { FEATURED_VIDEO, VIDEOS } from "../lib/data.js";
 import { ImageReveal, Reveal, SectionHead } from "./ui/Reveal.jsx";
+import { NewBadge } from "./ui/NewBadge.jsx";
 
 export default function Watch() {
   const { t } = useLang();
@@ -34,7 +35,7 @@ export default function Watch() {
             <span aria-hidden className="absolute inset-x-0 top-0 hidden h-[9%] bg-[#120D0A] sm:block" />
             <span aria-hidden className="absolute inset-x-0 bottom-0 hidden h-[9%] bg-[#120D0A] sm:block" />
             <span className="absolute bottom-[12%] left-6 flex max-w-[70%] flex-col gap-2.5 sm:bottom-[16%] sm:left-10">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-sun">{t("Featured")} · {FEATURED_VIDEO.length}</span>
+              <span className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-sun">{t("Featured")} · {FEATURED_VIDEO.length}{FEATURED_VIDEO.isNew && <NewBadge />}</span>
               <strong className="h-display text-[clamp(18px,2.6vw,36px)] leading-tight text-cream">{t(FEATURED_VIDEO.title)}</strong>
             </span>
             <span aria-hidden className="absolute bottom-[12%] right-6 grid h-14 w-14 place-items-center rounded-full bg-cream/95 text-umber transition-transform duration-300 group-hover:scale-110 sm:bottom-[16%] sm:right-10 sm:h-[72px] sm:w-[72px]">

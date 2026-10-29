@@ -26,6 +26,7 @@ export const PHOTOS = {
 };
 
 export const FEATURED_VIDEO = {
+  isNew: true,
   title: "[Featured video title]",
   length: "24:10",
   photo: PHOTOS.adobe,
@@ -41,7 +42,7 @@ export const VIDEOS = [
 // lengths in seconds
 export const TRACKS = [
   { id: "t1", title: "[Track title]", artist: "[Artist name]", album: "[Album]", length: 246, photo: PHOTOS.cactus, pos: "78% 48%" },
-  { id: "t2", title: "[Second track]", artist: "[Artist]", album: "[Album]", length: 221, photo: PHOTOS.sunset, pos: "60% 55%" },
+  { id: "t2", isNew: true, title: "[Second track]", artist: "[Artist]", album: "[Album]", length: 221, photo: PHOTOS.sunset, pos: "60% 55%" },
   { id: "t3", title: "[Third track]", artist: "[Artist]", album: "[Album]", length: 178, photo: PHOTOS.horses, pos: "50% 55%" },
   { id: "t4", title: "[Fourth track]", artist: "[Artist]", album: "[Album]", length: 260, photo: PHOTOS.adobe, pos: "50% 50%" },
   { id: "t5", title: "[Fifth track]", artist: "[Artist]", album: "[Album]", length: 195, photo: PHOTOS.cathedral, pos: "50% 30%" },

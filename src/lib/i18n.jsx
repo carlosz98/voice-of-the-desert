@@ -318,6 +318,9 @@ const ES = {
   "A note from Felipe": "Una nota de Felipe",
   "Shared from Voice of the Desert": "Compartido desde La Voz del Desierto",
 
+  New: "Nuevo",
+  "Next episode": "Próximo episodio",
+
   // footer
   About: "Acerca de",
   Advertise: "Anúnciate",
