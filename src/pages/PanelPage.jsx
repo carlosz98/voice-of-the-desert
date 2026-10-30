@@ -547,8 +547,8 @@ export default function PanelPage() {
     return () => meta.remove();
   }, [t]);
 
-  // only for Felipe: anyone else is sent to his profile, where the sign-in is
-  if (!isFelipe) return <Navigate to="/felipe#entrar" replace />;
+  // only for Felipe: anyone else is sent to the sign-in page
+  if (!isFelipe) return <Navigate to={`/cuenta?volver=${encodeURIComponent("/panel")}`} replace />;
 
   const publish = item => setRecent(r => [item, ...r].slice(0, 6));
   const go = id => {

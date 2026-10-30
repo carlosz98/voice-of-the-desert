@@ -16,6 +16,7 @@ import FelipePage from "./pages/FelipePage.jsx";
 import VersePage from "./pages/VersePage.jsx";
 import UploadPage from "./pages/UploadPage.jsx";
 import PanelPage from "./pages/PanelPage.jsx";
+import AccountPage from "./pages/AccountPage.jsx";
 import RadioPage from "./pages/RadioPage.jsx";
 import { FEATURES } from "./lib/features.js";
 
@@ -59,6 +60,7 @@ function Site() {
           <Route path="/versiculo" element={<VersePage />} />
           <Route path="/subir" element={<UploadPage />} />
           <Route path="/panel" element={<PanelPage />} />
+          <Route path="/cuenta" element={<AccountPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

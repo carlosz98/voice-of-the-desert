@@ -4,6 +4,7 @@ import { Camera, Link2, MessageCircle, Mic, Music, NotebookPen, Send } from "luc
 import { DESK, HOST, LEAD_STORY, NEXT_POST } from "../../lib/data.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { Link } from "../../lib/router.jsx";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../lib/auth.jsx";
 import { EASE } from "../ui/Reveal.jsx";
 import { SpotlightCard } from "../ui/SpotlightCard.jsx";
@@ -86,17 +87,21 @@ export function StoryRow({ story, rank }) {
 
 export function Comments({ story, idPrefix = "c" }) {
   const { t } = useLang();
-  const { isFelipe } = useAuth();
+  const { user, isFelipe } = useAuth();
+  const { pathname } = useLocation();
   const [extra, setExtra] = useState([]);
   const [draft, setDraft] = useState("");
   const thread = [...(story.thread || []), ...extra];
+  const back = encodeURIComponent(pathname);
 
   const post = e => {
     e.preventDefault();
-    if (!draft.trim()) return;
-    setExtra(x => [...x, { name: isFelipe ? HOST.name : "You", host: isFelipe, ago: "Just now", text: draft.trim(), mine: true }]);
+    if (!draft.trim() || !user) return;
+    const id = Date.now();
+    setExtra(x => [...x, { id, name: user.name, host: isFelipe, ago: "Just now", text: draft.trim(), mine: true }]);
     setDraft("");
   };
+  const removeMine = id => setExtra(x => x.filter(c => c.id !== id));
 
   return (
     <section aria-labelledby={`${idPrefix}-comments-h`} className="flex flex-col gap-4">
@@ -104,34 +109,72 @@ export function Comments({ story, idPrefix = "c" }) {
         {(story.comments || thread.length) + extra.length} {t("comments")}
       </h2>
       <ul className="flex flex-col gap-4">
-        {thread.map((c, i) => (
-          <motion.li key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`flex gap-3 ${c.host ? "ml-8 sm:ml-12" : ""}`}>
-            {c.host ? <Avatar size={36} /> : <ReaderAvatar name={c.name} />}
-            <div className={`flex-1 rounded-2xl px-4 py-3 ${c.host ? "bg-umber text-bone" : "bg-cream"}`}>
-              <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                <strong className="text-[15px]">{t(c.name)}</strong>
-                {c.host && <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-bold text-umber">{t("Host")}</span>}
-                <span className={`text-xs ${c.host ? "text-dust" : "text-bark"}`}>{t(c.ago)}</span>
+        <AnimatePresence initial={false}>
+          {thread.map((c, i) => (
+            <motion.li
+              key={c.id || i}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`flex gap-3 ${c.host ? "ml-8 sm:ml-12" : ""}`}
+            >
+              {c.host ? <Avatar size={36} /> : <ReaderAvatar name={c.name} />}
+              <div className={`flex-1 rounded-2xl px-4 py-3 ${c.host ? "bg-umber text-bone" : "bg-cream"}`}>
+                <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                  <strong className="text-[15px]">{c.mine ? c.name : t(c.name)}</strong>
+                  {c.host && <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-bold text-umber">{t("Host")}</span>}
+                  <span className={`text-xs ${c.host ? "text-dust" : "text-bark"}`}>{t(c.ago)}</span>
+                  {c.mine && (
+                    <button type="button" onClick={() => removeMine(c.id)} className={`ml-auto text-xs font-semibold underline underline-offset-2 ${c.host ? "text-dust hover:text-gold" : "text-bark hover:text-umber"}`}>
+                      {t("Delete")}
+                    </button>
+                  )}
+                </div>
+                <p className="text-[16px] leading-relaxed">{c.mine ? c.text : t(c.text)}</p>
               </div>
-              <p className="text-[16px] leading-relaxed">{c.mine ? c.text : t(c.text)}</p>
-            </div>
-          </motion.li>
-        ))}
+            </motion.li>
+          ))}
+        </AnimatePresence>
       </ul>
-      <form onSubmit={post} className="flex gap-2">
-        <label htmlFor={`${idPrefix}-comment`} className="sr-only">{t("Add a comment")}</label>
-        <input
-          id={`${idPrefix}-comment`}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          placeholder={t("Say something kind…")}
-          className="h-12 min-w-0 flex-1 rounded-full border border-dune bg-cream px-4 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/40"
-        />
-        <button type="submit" className="pill-dark h-12 px-5">
-          <Send aria-hidden className="h-4 w-4" /> {t("Post")}
-        </button>
-      </form>
-      <p className="text-xs text-bark">{t("Demo: comments stay on this page only.")}</p>
+
+      {user ? (
+        <>
+          <form onSubmit={post} className="flex gap-2">
+            <label htmlFor={`${idPrefix}-comment`} className="sr-only">{t("Add a comment")}</label>
+            <input
+              id={`${idPrefix}-comment`}
+              value={draft}
+              maxLength={2000}
+              onChange={e => setDraft(e.target.value)}
+              placeholder={t("Say something kind…")}
+              className="h-12 min-w-0 flex-1 rounded-full border border-dune bg-cream px-4 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/40"
+            />
+            <button type="submit" className="pill-dark h-12 px-5">
+              <Send aria-hidden className="h-4 w-4" /> {t("Post")}
+            </button>
+          </form>
+          <p className="text-xs text-bark">
+            {t("Commenting as")} <strong className="font-semibold text-loam">{user.name}</strong> · {t("Demo: comments stay on this page only.")}
+          </p>
+        </>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-dune bg-cream/60 p-5 sm:flex-row sm:items-center"
+        >
+          <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-gold/20 text-ochre">
+            <MessageCircle aria-hidden className="h-5 w-5" />
+          </span>
+          <p className="flex-1 text-[16px] leading-snug text-loam">{t("To leave a comment, sign in or create a free account.")}</p>
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/cuenta?volver=${back}`} className="pill-dark min-h-[48px] px-5">{t("Sign in")}</Link>
+            <Link to={`/cuenta?nueva=1&volver=${back}`} className="pill min-h-[48px] border border-dune px-5 font-semibold hover:border-umber">{t("Create an account")}</Link>
+          </div>
+        </motion.div>
+      )}
     </section>
   );
 }

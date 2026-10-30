@@ -1,6 +1,7 @@
 import { NEWS_ES } from "./news-es.js";
 import { MEDIA_ES } from "./media-es.js";
 import { PANEL_ES } from "./panel-es.js";
+import { ACCOUNT_ES } from "./account-es.js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 /* English / Español switch for the whole site.
@@ -12,6 +13,7 @@ const ES = {
   ...NEWS_ES,
   ...MEDIA_ES,
   ...PANEL_ES,
+  ...ACCOUNT_ES,
   // site
   "Skip to content": "Saltar al contenido",
   "Voice of the Desert": "La Voz del Desierto",

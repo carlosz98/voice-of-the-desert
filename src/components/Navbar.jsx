@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
 import { LayoutDashboard } from "lucide-react";
 import { LangToggle, useLang } from "../lib/i18n.jsx";
+import { AccountButton } from "../pages/AccountPage.jsx";
 
 export function Logo({ className = "" }) {
   const { lang } = useLang();
@@ -25,7 +26,7 @@ export function Logo({ className = "" }) {
 
 export default function Navbar() {
   const { pathname } = useLocation();
-  const { isFelipe } = useAuth();
+  const { isFelipe, user } = useAuth();
   // only real pages light up; section links on the home page stay plain
   // only the home page has a photo behind the menu; other pages get a solid bar
   const onHome = pathname === "/";
@@ -65,7 +66,7 @@ export default function Navbar() {
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="container-x flex h-[72px] items-center gap-6">
+        <div className="container-x flex h-[72px] items-center gap-3 md:gap-6">
           <Link to="/" aria-label={t("Voice of the Desert, home")} className="text-cream">
             <Logo />
           </Link>
@@ -96,6 +97,7 @@ export default function Navbar() {
             </ul>
           </nav>
           <LangToggle className="ml-auto xl:ml-0" />
+          <AccountButton className="hidden sm:inline-flex" />
           <Link to="/subir" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
             <Upload aria-hidden className="h-4 w-4" /> {t("Upload")}
           </Link>
@@ -104,7 +106,7 @@ export default function Navbar() {
             onClick={() => setOpen(true)}
             aria-label={t("Open menu")}
             aria-expanded={open}
-            className="grid h-11 w-11 place-items-center rounded-full border border-bone/40 text-bone xl:hidden"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-bone/40 text-bone xl:hidden"
           >
             <Menu aria-hidden className="h-5 w-5" />
           </button>
@@ -114,7 +116,7 @@ export default function Navbar() {
       <Sheet open={open} onClose={() => setOpen(false)} title={t("Menu")}>
         <nav aria-label="Mobile">
           <ul className="flex flex-col">
-            {[...NAV, { href: "/subir", label: "Upload" }, ...(isFelipe ? [{ href: "/panel", label: "My panel" }] : [])].map(item => (
+            {[...NAV, { href: "/subir", label: "Upload" }, ...(isFelipe ? [{ href: "/panel", label: "My panel" }] : []), { href: "/cuenta", label: user ? "My account" : "Sign in" }].map(item => (
               <li key={item.href}>
                 <Link
                   to={item.href}

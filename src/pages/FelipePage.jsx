@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Check, Mountain, Music, Newspaper, Send } from "lucide-react";
 import { HOST, SLIDES } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
+import { useAuth } from "../lib/auth.jsx";
 import Host from "../components/Host.jsx";
 import FelipeSignIn from "../components/FelipeSignIn.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
@@ -25,6 +26,7 @@ const MOMENTS = [
 
 function WriteToFelipe() {
   const { t } = useLang();
+  const { user } = useAuth();
   const [sent, setSent] = useState(false);
   const field = "h-12 rounded-xl border border-dune bg-bone px-3.5 text-base font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/40";
   return (
@@ -44,7 +46,7 @@ function WriteToFelipe() {
         >
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
             {t("Your name")}
-            <input required autoComplete="name" className={field} />
+            <input required autoComplete="name" defaultValue={user?.name || ""} key={user?.id || "guest"} className={field} />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
             {t("Message")}
