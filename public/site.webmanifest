@@ -1,0 +1,16 @@
+{
+  "name": "La Voz del Desierto",
+  "short_name": "La Voz",
+  "description": "Videos, música, noticias y un pódcast desde Chihuahua, con Felipe Lerma.",
+  "start_url": "/voice-of-the-desert/",
+  "scope": "/voice-of-the-desert/",
+  "display": "standalone",
+  "background_color": "#231A15",
+  "theme_color": "#231A15",
+  "lang": "es",
+  "icons": [
+    { "src": "/voice-of-the-desert/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/voice-of-the-desert/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/voice-of-the-desert/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

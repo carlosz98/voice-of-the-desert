@@ -249,6 +249,7 @@ export const HOST = {
 export const NAV = [
   { href: "/videos", label: "Watch" },
   { href: "/musica", label: "Listen" },
+  { href: "/radio", label: "Radio" },
   { href: "/felipe", label: "Felipe" },
   { href: "/versiculo", label: "Verse" },
   { href: "/podcast", label: "Podcast" },

@@ -20,6 +20,7 @@ import App from "./App.jsx";
 import { PlayerProvider } from "./lib/player.jsx";
 import { LangProvider } from "./lib/i18n.jsx";
 import { AuthProvider } from "./lib/auth.jsx";
+import { RadioProvider } from "./lib/radio-live.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -29,7 +30,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <LangProvider>
         <AuthProvider>
           <PlayerProvider>
-            <App />
+            <RadioProvider>
+              <App />
+            </RadioProvider>
           </PlayerProvider>
         </AuthProvider>
       </LangProvider>

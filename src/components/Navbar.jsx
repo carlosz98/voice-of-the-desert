@@ -69,14 +69,14 @@ export default function Navbar() {
           <Link to="/" aria-label={t("Voice of the Desert, home")} className="text-cream">
             <Logo />
           </Link>
-          <nav aria-label="Main" className="hidden flex-1 justify-center lg:flex">
+          <nav aria-label="Main" className="hidden flex-1 justify-center xl:flex">
             <ul className="flex gap-1">
               {NAV.map(item => (
                 <li key={item.href}>
                   <Link
                     to={item.href}
                     aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`nav-link inline-flex min-h-[44px] items-center px-4 text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors hover:text-gold ${isActive(item.href) ? "text-gold" : "text-bone"}`}
+                    className={`nav-link inline-flex min-h-[44px] items-center px-2.5 text-[13px] font-semibold uppercase tracking-[0.1em] 2xl:px-4 2xl:tracking-[0.12em] transition-colors hover:text-gold ${isActive(item.href) ? "text-gold" : "text-bone"}`}
                   >
                     {t(item.label)}
                   </Link>
@@ -87,7 +87,7 @@ export default function Navbar() {
                   <Link
                     to="/panel"
                     aria-current={pathname.startsWith("/panel") ? "page" : undefined}
-                    className="ml-2 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gold px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-umber transition-transform hover:-translate-y-0.5"
+                    className="ml-2 inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-full bg-gold px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-umber transition-transform hover:-translate-y-0.5"
                   >
                     <LayoutDashboard aria-hidden className="h-4 w-4" /> {t("My panel")}
                   </Link>
@@ -95,7 +95,7 @@ export default function Navbar() {
               )}
             </ul>
           </nav>
-          <LangToggle className="ml-auto lg:ml-0" />
+          <LangToggle className="ml-auto xl:ml-0" />
           <Link to="/subir" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
             <Upload aria-hidden className="h-4 w-4" /> {t("Upload")}
           </Link>
@@ -104,7 +104,7 @@ export default function Navbar() {
             onClick={() => setOpen(true)}
             aria-label={t("Open menu")}
             aria-expanded={open}
-            className="grid h-11 w-11 place-items-center rounded-full border border-bone/40 text-bone lg:hidden"
+            className="grid h-11 w-11 place-items-center rounded-full border border-bone/40 text-bone xl:hidden"
           >
             <Menu aria-hidden className="h-5 w-5" />
           </button>

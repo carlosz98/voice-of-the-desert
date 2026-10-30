@@ -243,18 +243,19 @@ export default function Hero() {
           its cut-out, so the horses / towers / hills / flowers stand in front
           of it. Everything else is z-40: always readable and clickable. */}
       <div className="container-x relative flex flex-1 flex-col items-center pb-40 pt-[128px] text-center sm:pt-[136px]">
-        <motion.span
+        <MotionLink
+          to="/radio"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="relative z-40 inline-flex items-center gap-2.5 rounded-full border border-bone/30 bg-earth/40 px-3.5 py-1.5 font-mono text-[12px] uppercase tracking-[0.2em] sm:text-[13px]"
+          className="relative z-40 inline-flex min-h-[40px] items-center gap-2.5 rounded-full border border-bone/30 bg-earth/40 px-4 py-1.5 font-mono text-[12px] uppercase tracking-[0.2em] transition-colors hover:border-gold hover:text-sun sm:text-[13px]"
         >
           <span className="relative h-2 w-2">
-            <span className="absolute inset-0 animate-ping2 rounded-full bg-gold" />
-            <span className="absolute inset-0 rounded-full bg-gold" />
+            <span className="absolute inset-0 animate-ping2 rounded-full bg-[#E5484D]" />
+            <span className="absolute inset-0 rounded-full bg-[#E5484D]" />
           </span>
-          {t("On air now · [Show name]")}
-        </motion.span>
+          {t("Live radio · Chihuahua and Mexico")}
+        </MotionLink>
 
         <motion.p
           ref={bigRef}
@@ -319,7 +320,7 @@ export default function Hero() {
             <Link to="/#watch" className="pill-gold min-h-[52px] px-7 text-base shadow-[0_10px_40px_rgba(230,176,74,0.4)]">
               <Play aria-hidden className="h-4 w-4" fill="currentColor" /> {t("Watch now")}
             </Link>
-            <Link to="/#listen" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</Link>
+            <Link to="/radio" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</Link>
           </motion.div>
 
           {/* on phones the host card is hidden, so Felipe says hello here */}
