@@ -59,16 +59,19 @@ add("");
 
 // ---------- Felipe's login ----------
 // The hash is made by PHP itself, same as the API will check it.
-const password = "desierto"; // demo password: change it before going live
-const hash = execFileSync("php", ["-r", `echo password_hash('${password}', PASSWORD_DEFAULT);`]).toString();
-add("-- Felipe. Demo password: desierto  (only the hash is stored)");
-add(`INSERT INTO admins (name, email, password_hash) VALUES ('Felipe Lerma', 'felipe@example.com', ${q(hash)});`);
+const hashOf = password => execFileSync("php", ["-r", `echo password_hash('${password}', PASSWORD_DEFAULT);`]).toString();
+add("-- Felipe is user 1, with role 'felipe'. Demo password: desierto");
+add("-- A visitor account for testing: rosa@example.com / demo1234");
+add("-- (only the hashes are stored; change both before going live)");
+add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', ${q(hashOf("desierto"))}, 'felipe', 'Chihuahua');`);
+add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', ${q(hashOf("demo1234"))}, 'user', 'Chihuahua');`);
 add("");
 
-// comments are added after their item, using the id MySQL just gave it
+// comments are added after their item, using the id MySQL just gave it.
+// Felipe's are linked to his account (user 1); the rest are sample names.
 function comments(type, thread = []) {
   for (const c of thread) {
-    add(`INSERT INTO comments (item_type, item_id, name, text, is_felipe, created_at) VALUES ('${type}', @item, ${q(c.name)}, ${q(c.text)}, ${c.host ? "TRUE" : "FALSE"}, ${when(c.ago)});`);
+    add(`INSERT INTO comments (item_type, item_id, user_id, name, text, is_felipe, created_at) VALUES ('${type}', @item, ${c.host ? 1 : "NULL"}, ${q(c.name)}, ${q(c.text)}, ${c.host ? "TRUE" : "FALSE"}, ${when(c.ago)});`);
   }
 }
 

@@ -5,10 +5,10 @@
  *
  *  It does five things:
  *    1. Lets the website (on GitHub Pages) talk to this API (CORS)
- *    2. Connects to MySQL (db())
+ *    2. Connects to MySQL (db(), query())
  *    3. Sends answers back as JSON (send(), fail())
  *    4. Reads what the website sent (input(), need())
- *    5. Checks if the visitor is Felipe (felipe(), only_felipe())
+ *    5. Knows who is signed in (current_user(), felipe(), only_...())
  * ============================================================ */
 
 
@@ -168,38 +168,90 @@ function save(string $table, array $columns, array $data, ?int $id = null): int
 }
 
 
-/* ---------- 5. Is this Felipe? ----------
- * After login, the website sends:  Authorization: Bearer <token>
- * We look that token up in admin_tokens. */
-function felipe(): ?array
+/* ---------- 5. Who is signed in? ----------
+ * After signing in, the website sends with every request:
+ *     Authorization: Bearer <token>
+ * We look that token up in the sessions table.
+ *
+ *   current_user()    → the signed-in person, or null
+ *   felipe()          → Felipe if he's the one signed in, or null
+ *   only_signed_in()  → stop with 401 unless someone is signed in
+ *   only_felipe()     → stop with 401/403 unless it's Felipe
+ */
+
+// The token from the Authorization header, or null
+function bearer_token(): ?string
 {
-    static $checked = false, $admin = null;
-    if ($checked) return $admin;
-    $checked = true;
-
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (!preg_match('/^Bearer\s+([a-f0-9]{64})$/', $header, $m)) return null;
-
-    $admin = query(
-        'SELECT a.id, a.name, a.email
-           FROM admin_tokens t JOIN admins a ON a.id = t.admin_id
-          WHERE t.token = ? AND t.expires_at > UTC_TIMESTAMP()',
-        [$m[1]]
-    )->fetch() ?: null;
-    return $admin;
+    return preg_match('/^Bearer\s+([a-f0-9]{64})$/', $header, $m) ? $m[1] : null;
 }
 
-// Use at the top of anything only Felipe may do
+function current_user(): ?array
+{
+    static $checked = false, $user = null;
+    if ($checked) return $user;
+    $checked = true;
+
+    $token = bearer_token();
+    if (!$token) return null;
+
+    $user = query(
+        'SELECT u.id, u.name, u.email, u.role, u.town, u.created_at
+           FROM sessions s JOIN users u ON u.id = s.user_id
+          WHERE s.token = ? AND s.expires_at > UTC_TIMESTAMP()',
+        [$token]
+    )->fetch() ?: null;
+    return $user;
+}
+
+function felipe(): ?array
+{
+    $user = current_user();
+    return ($user && $user['role'] === 'felipe') ? $user : null;
+}
+
+function only_signed_in(): array
+{
+    return current_user() ?? fail('Please sign in first.', 401);
+}
+
 function only_felipe(): array
 {
-    return felipe() ?? fail('Only Felipe can do this. Please sign in.', 401);
+    $user = only_signed_in();
+    if ($user['role'] !== 'felipe') fail('Only Felipe can do this.', 403);
+    return $user;
+}
+
+// Sign someone in: make a random ticket, save it, send it back.
+// 32 random bytes = 64 hex characters, impossible to guess.
+function start_session(array $user): void
+{
+    $token = bin2hex(random_bytes(32));
+    $days  = $user['role'] === 'felipe' ? 7 : 30;   // Felipe's ticket expires sooner (it can do more)
+    query("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, UTC_TIMESTAMP() + INTERVAL $days DAY)", [$token, $user['id']]);
+    query('UPDATE users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?', [$user['id']]);
+    query('DELETE FROM sessions WHERE expires_at < UTC_TIMESTAMP()'); // tidy up old tickets
+
+    send(['token' => $token, 'user' => public_user($user)], 201);
+}
+
+// What the website may see about a user (never the password hash)
+function public_user(array $u): array
+{
+    return [
+        'id'    => (int)$u['id'],
+        'name'  => $u['name'],
+        'email' => $u['email'],
+        'role'  => $u['role'],
+        'town'  => $u['town'] ?? null,
+    ];
 }
 
 // Comments for one article / video / episode, oldest first
 function comments_for(string $type, int $id): array
 {
     return query(
-        'SELECT id, name, text, is_felipe, created_at
+        'SELECT id, user_id, name, text, is_felipe, created_at
            FROM comments WHERE item_type = ? AND item_id = ?
           ORDER BY created_at, id',
         [$type, $id]

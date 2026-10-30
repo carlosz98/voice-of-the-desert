@@ -5,9 +5,12 @@
 --  Run this file first, then 02_seed.sql.
 --  Works on MySQL 8 (Google Cloud SQL) and MariaDB.
 --
+--  ⚠ It ERASES the tables and makes them again. Never run it
+--    on the live database once real people are using the site.
+--
 --  One table for each thing on the site:
---    admins       → who can sign in to "Mi panel" (Felipe)
---    admin_tokens → keeps Felipe signed in after he logs in
+--    users        → everyone with an account (Felipe too, as role 'felipe')
+--    sessions     → keeps people signed in after they log in
 --    articles     → the news stories + Felipe's take on each
 --    videos       → the videos page
 --    songs        → the music page
@@ -26,34 +29,43 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;            -- read this file as utf8 too (for the ñ in Norteño)
 
 -- Start clean every time this file runs (children first, because of the links)
-DROP TABLE IF EXISTS admin_tokens, dedications, comments, messages, desk_notes,
-                     episodes, songs, videos, articles, admins;
+DROP TABLE IF EXISTS sessions, admin_tokens, dedications, comments, messages, desk_notes,
+                     episodes, songs, videos, articles, users, admins;
 
 
 -- ------------------------------------------------------------
--- admins: Felipe's login. We NEVER save the real password,
--- only a "hash" made by PHP's password_hash().
+-- users: everyone who registers.
+--   role 'user'   → a visitor with an account (can comment)
+--   role 'felipe' → Felipe (can also use "Mi panel")
+-- We NEVER save the real password, only a "hash" made by
+-- PHP's password_hash(). Nobody can turn a hash back into
+-- the password, not even us.
 -- ------------------------------------------------------------
-CREATE TABLE admins (
+CREATE TABLE users (
   id            INT AUTO_INCREMENT PRIMARY KEY,
-  name          VARCHAR(100) NOT NULL,
-  email         VARCHAR(150) NOT NULL UNIQUE,
+  name          VARCHAR(100) NOT NULL,          -- shown next to their comments
+  email         VARCHAR(150) NOT NULL UNIQUE,   -- UNIQUE: one account per email
   password_hash VARCHAR(255) NOT NULL,
-  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+  role          ENUM('user','felipe') NOT NULL DEFAULT 'user',
+  town          VARCHAR(100),                   -- optional: "Delicias", "Parral"...
+  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_login_at DATETIME
 );
 
 
 -- ------------------------------------------------------------
--- admin_tokens: when Felipe signs in, PHP gives his browser a
+-- sessions: when someone signs in, PHP gives their browser a
 -- long random "ticket" (token). The browser sends it back with
--- every panel action, so he doesn't type his password each time.
--- Tickets expire after 7 days.
+-- every request, so they don't type their password each time.
+-- Tickets expire after 30 days (7 for Felipe).
+-- If the user is deleted, their tickets go too (CASCADE).
 -- ------------------------------------------------------------
-CREATE TABLE admin_tokens (
+CREATE TABLE sessions (
   token      CHAR(64)  PRIMARY KEY,
-  admin_id   INT       NOT NULL,
+  user_id    INT       NOT NULL,
   expires_at DATETIME  NOT NULL,
-  FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
+  created_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 
@@ -141,16 +153,22 @@ CREATE TABLE episodes (
 -- comments: ONE table for comments everywhere.
 --   item_type says WHAT was commented (article, video, episode)
 --   item_id   says WHICH one (its id in that table)
+--   user_id   says WHO wrote it (their account)
+-- New comments need an account. The sample comments from the
+-- demo have no account (user_id is NULL), only a name.
+-- If someone deletes their account, their comments go too.
 -- ------------------------------------------------------------
 CREATE TABLE comments (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   item_type  ENUM('article','video','episode') NOT NULL,
   item_id    INT          NOT NULL,
-  name       VARCHAR(100) NOT NULL,
+  user_id    INT          NULL,
+  name       VARCHAR(100) NOT NULL,           -- copied from the account when posting
   text       TEXT         NOT NULL,
   is_felipe  BOOLEAN      DEFAULT FALSE,      -- shows his gold "host" badge
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX (item_type, item_id)                  -- makes "comments for article 3" fast
+  INDEX (item_type, item_id),                 -- makes "comments for article 3" fast
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 
@@ -158,27 +176,33 @@ CREATE TABLE comments (
 -- dedications: "dedicate a song to someone"
 -- song_id points to a row in songs (a FOREIGN KEY).
 -- If the song is deleted, its dedications go with it.
+-- Anyone can send one, with or without an account.
 -- ------------------------------------------------------------
 CREATE TABLE dedications (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(100) NOT NULL,           -- who sends it
   to_whom    VARCHAR(150) NOT NULL,           -- who it's for
   song_id    INT          NOT NULL,
+  user_id    INT          NULL,               -- their account, if signed in
   message    TEXT,
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+  FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 
 -- ------------------------------------------------------------
 -- messages: "Write to Felipe". Only Felipe reads these.
+-- Anyone can write, with or without an account.
 -- ------------------------------------------------------------
 CREATE TABLE messages (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(100) NOT NULL,
   message    TEXT         NOT NULL,
+  user_id    INT          NULL,               -- their account, if signed in
   is_read    BOOLEAN      DEFAULT FALSE,
-  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 

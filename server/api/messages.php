@@ -3,6 +3,7 @@
  *  messages.php: "Write to Felipe"
  *
  *  POST   messages.php  {name, message}   → anyone writes to him
+ *                       (signed in: name comes from the account)
  *  GET    messages.php                    → Felipe reads them (newest first)
  *  PUT    messages.php?id=3               → Felipe marks one as read
  *  DELETE messages.php?id=3               → Felipe deletes one
@@ -12,19 +13,26 @@
 require __DIR__ . '/_db.php';
 
 if (method() === 'POST') {
-    $in = need(['name' => 100, 'message' => 3000]);
-    query('INSERT INTO messages (name, message) VALUES (?, ?)', [$in['name'], $in['message']]);
+    $me      = current_user();                // may be null: no account needed
+    $name    = $me ? $me['name'] : need(['name' => 100])['name'];
+    $message = need(['message' => 3000])['message'];
+    query('INSERT INTO messages (name, message, user_id) VALUES (?, ?, ?)', [$name, $message, $me['id'] ?? null]);
     send(['ok' => true], 201);
 }
 
 if (method() === 'GET') {
     only_felipe();
-    send(query('SELECT * FROM messages ORDER BY created_at DESC')->fetchAll());
+    // LEFT JOIN: show the sender's email when they had an account, so Felipe can reply
+    send(query(
+        'SELECT m.*, u.email AS sender_email, u.town AS sender_town
+           FROM messages m LEFT JOIN users u ON u.id = m.user_id
+          ORDER BY m.created_at DESC'
+    )->fetchAll());
 }
 
 if (method() === 'PUT') {
     only_felipe();
-    $done = query('UPDATE messages SET is_read = TRUE WHERE id = ?', [id_param()])->rowCount();
+    query('UPDATE messages SET is_read = TRUE WHERE id = ?', [id_param()]);
     send(['ok' => true]);
 }
 
