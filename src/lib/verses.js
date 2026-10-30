@@ -87,3 +87,38 @@ export async function loadVerse(v, lang) {
     reference: `${data.book_name} ${v.chapter}:${range}`,
   };
 }
+
+/* ───────── The reader ("Lee la Biblia") ─────────
+ * A few chapters to read in the book on /versiculo. Same API and
+ * translations as the daily verse. */
+export const READING = [
+  { id: "sal-23", book: 19, chapter: 23 },
+  { id: "sal-91", book: 19, chapter: 91 },
+  { id: "sal-121", book: 19, chapter: 121 },
+  { id: "pro-3", book: 20, chapter: 3 },
+  { id: "jn-14", book: 43, chapter: 14 },
+  { id: "1co-13", book: 46, chapter: 13 },
+];
+
+export async function loadChapter(lang, book, chapter) {
+  const data = await getChapter(lang, book, chapter);
+  return {
+    name: `${data.book_name} ${chapter}`,
+    verses: data.verses.map(v => ({ n: v.verse, text: tidy(v.text, lang) })),
+  };
+}
+
+/* Where this visitor is reading. Kept in their own browser only. */
+const KEY = "votd-reading";
+export function readProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(KEY)) || { id: READING[0].id, page: 0, done: [] };
+  } catch {
+    return { id: READING[0].id, page: 0, done: [] };
+  }
+}
+export function writeProgress(p) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(p));
+  } catch {}
+}

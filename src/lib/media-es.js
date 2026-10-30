@@ -220,6 +220,33 @@ export const MEDIA_ES = {
   "What he": "Lo que le",
   loves: "gusta",
 
+  // verse page and Bible reader
+  "Choose a day": "Elige un día",
+  "Save as image": "Guardar como imagen",
+  "A reflection from Felipe": "Una reflexión de Felipe",
+  "[Felipe's thoughts on today's verse, a few lines in his own words.]": "[Lo que Felipe piensa del versículo de hoy, unas líneas en sus propias palabras.]",
+  "EVERY MORNING, BEFORE COFFEE": "CADA MAÑANA, ANTES DEL CAFÉ",
+  "Get the verse every morning": "Recibe el versículo cada mañana",
+  "You're on the list. See you tomorrow morning.": "Ya estás en la lista. Nos vemos mañana temprano.",
+  "A little every day": "Un poquito cada día",
+  "Read the": "Lee la",
+  Bible: "Biblia",
+  "Open the book, turn the pages, and save your place to keep reading tomorrow.": "Abre el libro, pasa las páginas y guarda tu lugar para seguir leyendo mañana.",
+  "Choose a chapter": "Elige un capítulo",
+  "chapters read": "capítulos leídos",
+  "Previous page": "Página anterior",
+  "Next page": "Página siguiente",
+  Page: "Página",
+  "Chapter finished!": "¡Capítulo terminado!",
+  "Place saved": "Lugar guardado",
+  "Mark as read": "Marcar como leído",
+  "Save my place": "Guardar mi lugar",
+  "Your place is saved on this device only.": "Tu lugar se guarda solo en este dispositivo.",
+  Psalms: "Salmos",
+  Proverbs: "Proverbios",
+  John: "Juan",
+  "1 Corinthians": "1 Corintios",
+
   // Upload page
   "Share with the community": "Comparte con la comunidad",
 };
