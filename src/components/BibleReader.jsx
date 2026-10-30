@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { BookmarkCheck, BookOpen, Check, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
 import { READING, loadChapter, readProgress, writeProgress } from "../lib/verses.js";
@@ -55,6 +55,111 @@ function Page({ verses, number, side, chapterName, first }) {
   );
 }
 
+/* ───────── The turning page ─────────
+ * Underneath sits the spread you'll see once the page lands. On top, one
+ * leaf turns over the spine: its front is the page you were reading, its
+ * back is the page that comes next (like real paper). Light falls across
+ * it as it lifts, and it casts a shadow on the page below. */
+const FLIP = { duration: 0.95, ease: [0.55, 0.05, 0.25, 1] };
+
+function Shade({ from, to, side }) {
+  // a soft gradient from the spine that darkens/lightens as the leaf turns
+  return (
+    <motion.span
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{ background: `linear-gradient(${side === "right" ? "90deg" : "270deg"}, rgba(60,40,25,0.55), rgba(60,40,25,0.05) 65%)` }}
+      initial={{ opacity: from }}
+      animate={{ opacity: to }}
+      transition={FLIP}
+    />
+  );
+}
+
+function Book({ pages, at, flip, wide, name, onLand }) {
+  const page = (i, side) => (
+    <Page verses={pages[i]} number={pages[i] ? i + 1 : null} side={side} chapterName={name} first={i === 0} />
+  );
+
+  if (!flip) {
+    return (
+      <div className={`absolute inset-0 grid ${wide ? "grid-cols-2" : ""}`} aria-live="polite">
+        {page(at, wide ? "left" : "single")}
+        {wide && page(at + 1, "right")}
+      </div>
+    );
+  }
+
+  const next = flip.dir > 0;
+  const to = flip.to;
+
+  // what's underneath while the leaf is in the air
+  const base = wide
+    ? next
+      ? [page(at, "left"), page(to + 1, "right")]
+      : [page(to, "left"), page(at + 1, "right")]
+    : [page(next ? to : at, "single")];
+
+  // the leaf: which half it covers, where it hinges, and its two faces
+  const leaf = wide
+    ? next
+      ? { half: "right", origin: "left center", rotate: [0, -180], front: page(at + 1, "right"), back: page(to, "left") }
+      : { half: "left", origin: "right center", rotate: [0, 180], front: page(at, "left"), back: page(to + 1, "right") }
+    : next
+      ? { half: "all", origin: "left center", rotate: [0, -180], front: page(at, "single"), back: <BlankPage /> }
+      : { half: "all", origin: "left center", rotate: [-180, 0], front: page(to, "single"), back: <BlankPage /> };
+
+  const pos = leaf.half === "right" ? "left-1/2 right-0" : leaf.half === "left" ? "left-0 right-1/2" : "inset-x-0";
+  const lift = next ? -1 : 1;
+
+  return (
+    <>
+      <div className={`absolute inset-0 grid ${wide ? "grid-cols-2" : ""}`}>
+        {base.map((b, i) => (
+          <div key={i} className="relative h-full">
+            {b}
+            {/* the shadow the turning page casts on the one below */}
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[rgba(60,40,25,0.35)]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.55, 0] }}
+              transition={FLIP}
+            />
+          </div>
+        ))}
+      </div>
+      <motion.div
+        className={`absolute inset-y-0 z-10 ${pos}`}
+        style={{ transformOrigin: leaf.origin, transformStyle: "preserve-3d" }}
+        initial={{ rotateY: leaf.rotate[0] }}
+        animate={{
+          rotateY: leaf.rotate,
+          // a little lift and curl in the middle of the turn, so it isn't stiff
+          z: [0, 60, 0],
+          skewY: [0, lift * 2.5, 0],
+          scaleY: [1, 1.015, 1],
+        }}
+        transition={FLIP}
+        onAnimationComplete={onLand}
+      >
+        <div className="absolute inset-0 [backface-visibility:hidden]">
+          {leaf.front}
+          <Shade from={0} to={0.6} side={leaf.half === "left" ? "left" : "right"} />
+        </div>
+        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          {leaf.back}
+          <Shade from={0.6} to={0} side={leaf.half === "left" ? "right" : "left"} />
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+function BlankPage() {
+  return <div className="h-full rounded-[6px] bg-[#F6EEDD] shadow-[inset_0_0_40px_rgba(107,85,68,0.18)]" />;
+}
+
 /* An open book: pick a chapter, turn the pages, and save your place. */
 export default function BibleReader() {
   const { t, lang } = useLang();
@@ -64,7 +169,7 @@ export default function BibleReader() {
   const [failed, setFailed] = useState(false);
   const [tries, setTries] = useState(0);
   const [page, setPage] = useState(progress.page || 0);
-  const [dir, setDir] = useState(1);
+  const [flip, setFlip] = useState(null); // a page in the middle of turning: { dir, to }
   const [saved, setSaved] = useState(false);
   const current = READING.find(r => r.id === progress.id) || READING[0];
 
@@ -85,11 +190,15 @@ export default function BibleReader() {
   const last = at + step >= pages.length;
 
   const turn = d => {
+    if (flip) return; // let the page land first
     const next = at + d * step;
     if (next < 0 || next >= pages.length) return;
-    setDir(d);
-    setPage(next);
+    setFlip({ dir: d, to: next });
     setSaved(false);
+  };
+  const land = () => {
+    setPage(flip.to);
+    setFlip(null);
   };
 
   useEffect(() => {
@@ -106,7 +215,7 @@ export default function BibleReader() {
     const p = { ...progress, id, page: 0 };
     setProgress(p);
     setPage(0);
-    setDir(1);
+    setFlip(null);
     setSaved(false);
   };
 
@@ -116,13 +225,6 @@ export default function BibleReader() {
     setProgress(p);
     writeProgress(p);
     setSaved(true);
-  };
-
-  // the new pages wait underneath while the old ones turn away over the spine
-  const variants = {
-    enter: { opacity: 0.6, zIndex: 1 },
-    center: { rotateY: 0, opacity: 1, zIndex: 1 },
-    exit: d => ({ rotateY: d > 0 ? -95 : 95, opacity: 0.3, zIndex: 2, transformOrigin: d > 0 ? "left center" : "right center", boxShadow: "0 20px 60px rgba(43,29,23,0.35)" }),
   };
 
   const doneCount = progress.done.length;
@@ -166,7 +268,12 @@ export default function BibleReader() {
         <div aria-hidden className="absolute -inset-3 rounded-[14px] bg-[#5A3A26] shadow-[0_40px_80px_rgba(43,29,23,0.35)] sm:-inset-4" />
         <div aria-hidden className="absolute -top-5 right-16 z-20 h-24 w-6 bg-rust shadow-md [clip-path:polygon(0_0,100%_0,100%_100%,50%_82%,0_100%)]" />
 
-        <div className="relative h-[640px] [perspective:2000px] sm:h-[600px]">
+        <motion.div
+          className="relative h-[640px] touch-pan-y [perspective:2000px] sm:h-[600px]"
+          onPanEnd={(e, info) => {
+            if (Math.abs(info.offset.x) > 60 && Math.abs(info.offset.x) > Math.abs(info.offset.y)) turn(info.offset.x < 0 ? 1 : -1);
+          }}
+        >
           {!chapter && !failed && (
             <div className={`grid h-full gap-0 ${wide ? "grid-cols-2" : ""}`}>
               {[0, 1].slice(0, wide ? 2 : 1).map(i => (
@@ -182,39 +289,21 @@ export default function BibleReader() {
               <button type="button" onClick={() => setTries(n => n + 1)} className="pill-dark"><RotateCw aria-hidden className="h-4 w-4" /> {t("Try again")}</button>
             </div>
           )}
-          {chapter && (
-            <AnimatePresence custom={dir} initial={false}>
-              <motion.div
-                key={`${current.id}-${at}-${wide}-${lang}`}
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.75, ease: [0.45, 0, 0.2, 1] }}
-                className={`absolute inset-0 grid ${wide ? "grid-cols-2" : ""}`}
-                style={{ transformStyle: "preserve-3d" }}
-                aria-live="polite"
-              >
-                <Page verses={pages[at]} number={at + 1} side={wide ? "left" : "single"} chapterName={chapter.name} first={at === 0} />
-                {wide && <Page verses={pages[at + 1]} number={pages[at + 1] ? at + 2 : null} side="right" chapterName={chapter.name} />}
-              </motion.div>
-            </AnimatePresence>
-          )}
+          {chapter && <Book pages={pages} at={at} flip={flip} wide={wide} name={chapter.name} onLand={land} />}
           {/* the spine */}
-          {wide && <div aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[#D9C7A6]" />}
-        </div>
+          {wide && <div aria-hidden className="pointer-events-none absolute inset-y-0 left-1/2 z-20 w-px -translate-x-1/2 bg-[#D9C7A6]" />}
+        </motion.div>
       </div>
 
       {/* turn, save */}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <button type="button" onClick={() => turn(-1)} disabled={at === 0 || !chapter} aria-label={t("Previous page")} className="grid h-12 w-12 place-items-center rounded-full border border-dune transition-colors hover:border-umber disabled:opacity-35">
+        <button type="button" onClick={() => turn(-1)} disabled={at === 0 || !chapter || !!flip} aria-label={t("Previous page")} className="grid h-12 w-12 place-items-center rounded-full border border-dune transition-colors hover:border-umber disabled:opacity-35">
           <ChevronLeft aria-hidden className="h-5 w-5" />
         </button>
         <span className="min-w-[110px] text-center text-sm text-bark tabular-nums">
           {chapter ? `${t("Page")} ${at + 1}${wide && pages[at + 1] ? `–${at + 2}` : ""} ${t("of")} ${pages.length}` : "…"}
         </span>
-        <button type="button" onClick={() => turn(1)} disabled={last || !chapter} aria-label={t("Next page")} className="grid h-12 w-12 place-items-center rounded-full border border-dune transition-colors hover:border-umber disabled:opacity-35">
+        <button type="button" onClick={() => turn(1)} disabled={last || !chapter || !!flip} aria-label={t("Next page")} className="grid h-12 w-12 place-items-center rounded-full border border-dune transition-colors hover:border-umber disabled:opacity-35">
           <ChevronRight aria-hidden className="h-5 w-5" />
         </button>
         <button type="button" onClick={save} disabled={!chapter} className="pill-dark ml-1 min-h-[48px] disabled:opacity-50">
