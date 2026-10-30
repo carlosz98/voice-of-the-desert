@@ -40,7 +40,9 @@ const CLOUDS = [
   ["56%", 10, 180, "#F4EADA"], ["59%", 0, 90, "#F4EADA"], ["80%", 50, 240, "#EFE2CB"],
 ];
 
-export default function Upload() {
+export default function Upload({ pageTitle = false }) {
+  // on its own page this is the page title (h1); on the home page a section (h2)
+  const Heading = pageTitle ? "h1" : "h2";
   const { t } = useLang();
   const [kind, setKind] = useState("video");
   const [file, setFile] = useState(null);
@@ -79,11 +81,11 @@ export default function Upload() {
 
       <div className="container-x relative flex flex-col items-center gap-6 pb-[clamp(190px,22vw,320px)] pt-28 text-center">
         <Reveal as="span" className="eyebrow flex items-center gap-2.5 text-rust"><span aria-hidden>✦</span> {t("Chapter")} {t("five")} · {t("Upload")}</Reveal>
-        <h2 id="up-h" className="h-display text-[clamp(30px,5vw,68px)]">
+        <Heading id="up-h" className="h-display text-[clamp(30px,5vw,68px)]">
           <CurtainText delay={0.05}>
             {t("Add your")} <Accent className="text-rust">{t("voice")}</Accent>
           </CurtainText>
-        </h2>
+        </Heading>
         <Reveal as="p" delay={0.1} className="max-w-[540px] text-lg leading-relaxed text-loam">
           {t("Upload a video, a song, a podcast episode or a news tip, and get your own creator page.")}
         </Reveal>

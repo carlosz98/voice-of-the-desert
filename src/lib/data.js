@@ -1,7 +1,8 @@
 // Site content. Everything in [brackets] is a placeholder for Felipe's real content.
 // Later this comes from the database (uploads, articles, tracks, episodes).
 
-const img = name => `${import.meta.env.BASE_URL}img/${name}`;
+import { img, PHOTOS } from "./photos.js";
+export { PHOTOS };
 
 /* Hero slides. `mask` (or null to skip the effect) is a cut-out of the photo's subject (horses, towers,
  * ridge, flowers) that sits in front of the headline. `pos` is the
@@ -17,43 +18,8 @@ export const SLIDES = [
   { id: "cactus", word: "the desert", caption: "Desert bloom · Chihuahuan Desert", src: img("cactus.webp"), mask: img("cactus-mask.png"), pos: "50% 45%", alt: "Red flowers blooming on a desert cactus" },
 ];
 
-export const PHOTOS = {
-  sunset: img("sunset.webp"),
-  horses: img("horses.webp"),
-  cathedral: img("cathedral.webp"),
-  adobe: img("adobe.webp"),
-  cactus: img("cactus.webp"),
-};
 
-export const FEATURED_VIDEO = {
-  isNew: true,
-  title: "[Featured video title]",
-  length: "24:10",
-  photo: PHOTOS.adobe,
-  pos: "50% 55%",
-};
-
-export const VIDEOS = [
-  { id: "v1", title: "[Video title]", creator: "[Creator]", views: "12K views", length: "8:40", photo: PHOTOS.cathedral, pos: "50% 32%" },
-  { id: "v2", title: "[Video title]", creator: "[Creator]", views: "4.6K views", length: "31:02", photo: PHOTOS.cactus, pos: "50% 45%" },
-  { id: "v3", title: "[Video title]", creator: "[Creator]", views: "27K views", length: "5:15", photo: PHOTOS.sunset, pos: "60% 55%" },
-];
-
-// lengths in seconds
-export const TRACKS = [
-  { id: "t1", title: "[Track title]", artist: "[Artist name]", album: "[Album]", length: 246, photo: PHOTOS.cactus, pos: "78% 48%" },
-  { id: "t2", isNew: true, title: "[Second track]", artist: "[Artist]", album: "[Album]", length: 221, photo: PHOTOS.sunset, pos: "60% 55%" },
-  { id: "t3", title: "[Third track]", artist: "[Artist]", album: "[Album]", length: 178, photo: PHOTOS.horses, pos: "50% 55%" },
-  { id: "t4", title: "[Fourth track]", artist: "[Artist]", album: "[Album]", length: 260, photo: PHOTOS.adobe, pos: "50% 50%" },
-  { id: "t5", title: "[Fifth track]", artist: "[Artist]", album: "[Album]", length: 195, photo: PHOTOS.cathedral, pos: "50% 30%" },
-];
-
-export const EPISODES = [
-  { id: "e12", number: 12, title: "[Episode title, with the guest's name]", length: "52:10" },
-  { id: "e11", number: 11, title: "[Episode title]", length: "47:02" },
-  { id: "e10", number: 10, title: "[Episode title]", length: "55:40" },
-  { id: "e9", number: 9, title: "[Episode title]", length: "41:18" },
-];
+export { FEATURED_VIDEO, VIDEOS, ALL_VIDEOS, VIDEO_FILTERS, videoBySlug, TRACKS, PLAYLISTS, GENRES, DEDICATIONS, EPISODES, episodeBySlug } from "./media.js";
 
 export const NEWS_FILTERS = ["All", "Local", "Music", "Culture", "Nature", "Faith"];
 
@@ -281,10 +247,10 @@ export const HOST = {
 };
 
 export const NAV = [
-  { href: "/#watch", label: "Watch" },
-  { href: "/#listen", label: "Listen" },
-  { href: "/#host", label: "Felipe" },
-  { href: "/#verse", label: "Verse" },
-  { href: "/#podcast", label: "Podcast" },
+  { href: "/videos", label: "Watch" },
+  { href: "/musica", label: "Listen" },
+  { href: "/felipe", label: "Felipe" },
+  { href: "/versiculo", label: "Verse" },
+  { href: "/podcast", label: "Podcast" },
   { href: "/noticias", label: "News" },
 ]

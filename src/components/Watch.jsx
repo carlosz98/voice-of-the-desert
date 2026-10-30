@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { FEATURED_VIDEO, VIDEOS } from "../lib/data.js";
 import { ImageReveal, Reveal, SectionHead } from "./ui/Reveal.jsx";
 import { NewBadge } from "./ui/NewBadge.jsx";
+import { Link } from "../lib/router.jsx";
 
 export default function Watch() {
   const { t } = useLang();
@@ -16,13 +17,13 @@ export default function Watch() {
               {t("Views of the")} <Accent className="text-sun">{t("horizon")}</Accent>
             </span>
           </SectionHead>
-          <a href="#" className="inline-flex min-h-[44px] items-center font-bold text-bone transition-colors hover:text-gold">
+          <Link to="/videos" className="inline-flex min-h-[44px] items-center font-bold text-bone transition-colors hover:text-gold">
             {t("All videos →")}
-          </a>
+          </Link>
         </div>
 
         <ImageReveal radius={20} className="mb-6 aspect-[16/9] max-w-full bg-clay sm:aspect-[2.39/1]">
-          <a href="#" className="group absolute inset-0 block overflow-hidden">
+          <Link to={`/videos/${FEATURED_VIDEO.slug}`} className="group absolute inset-0 block overflow-hidden">
             <img
               src={FEATURED_VIDEO.photo}
               alt=""
@@ -41,13 +42,13 @@ export default function Watch() {
             <span aria-hidden className="absolute bottom-[12%] right-6 grid h-14 w-14 place-items-center rounded-full bg-cream/95 text-umber transition-transform duration-300 group-hover:scale-110 sm:bottom-[16%] sm:right-10 sm:h-[72px] sm:w-[72px]">
               <Play className="ml-1 h-6 w-6" fill="currentColor" />
             </span>
-          </a>
+          </Link>
         </ImageReveal>
 
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {VIDEOS.map((v, i) => (
             <Reveal as="li" key={v.id} delay={i * 0.05}>
-              <a href="#" className="group flex flex-col gap-3">
+              <Link to={`/videos/${v.slug}`} className="group flex flex-col gap-3">
                 <span className="relative block aspect-[2.39/1] overflow-hidden rounded-xl bg-clay">
                   <img
                     src={v.photo}
@@ -63,7 +64,7 @@ export default function Watch() {
                 <span className="text-sm text-dust">
                   {t(v.creator)} · {t(v.views)}
                 </span>
-              </a>
+              </Link>
             </Reveal>
           ))}
         </ul>

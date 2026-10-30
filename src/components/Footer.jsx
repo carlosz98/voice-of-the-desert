@@ -1,6 +1,7 @@
 import { useLang } from "../lib/i18n.jsx";
 import { ArrowUpRight } from "lucide-react";
 import { Logo } from "./Navbar.jsx";
+import { Link } from "../lib/router.jsx";
 
 export default function Footer() {
   const { t } = useLang();
@@ -10,9 +11,9 @@ export default function Footer() {
         <Logo className="text-bone" />
         <nav aria-label="Footer">
           <ul className="flex flex-wrap gap-x-2">
-            {["About", "Creators", "Advertise", "Terms", "Privacy"].map(l => (
+            {[["About", "/felipe"], ["News", "/noticias"], ["Music", "/musica"], ["Podcast", "/podcast"], ["Upload", "/subir"]].map(([l, to]) => (
               <li key={l}>
-                <a href="#" className="inline-flex min-h-[44px] items-center px-2 hover:text-gold">{t(l)}</a>
+                <Link to={to} className="inline-flex min-h-[44px] items-center px-2 hover:text-gold">{t(l)}</Link>
               </li>
             ))}
           </ul>

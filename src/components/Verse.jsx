@@ -11,7 +11,7 @@ import { EASE, Reveal } from "./ui/Reveal.jsx";
 const TODAY = dayNumber();
 const WEEK = 6; // how many earlier days you can page back through
 
-function dateFor(day, lang) {
+export function dateFor(day, lang) {
   // day is a UTC day number; show it as that calendar date
   return new Date(day * 86400000).toLocaleDateString(lang === "es" ? "es-MX" : "en-US", {
     weekday: "long",

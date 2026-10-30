@@ -8,6 +8,7 @@ import { tuneIn } from "../lib/radio.js";
 import { Reveal, SectionHead } from "./ui/Reveal.jsx";
 import { NewBadge } from "./ui/NewBadge.jsx";
 import NextEpisode from "./NextEpisode.jsx";
+import { Link } from "../lib/router.jsx";
 
 const STARS = [
   [8, 14, 2, 0], [22, 30, 3, 0.8], [35, 10, 2, 1.6], [51, 22, 2, 0.4], [63, 8, 3, 2.2],
@@ -68,9 +69,8 @@ export default function Podcast() {
             Ep. {ep.number} — {t(ep.title)}
           </motion.p>
           <Reveal className="flex flex-wrap gap-2.5">
-            {["All episodes", "Watch on video", "Subscribe"].map(l => (
-              <a key={l} href="#" className="pill border border-bone/40 font-semibold text-bone hover:border-gold hover:text-gold">{t(l)}</a>
-            ))}
+            <Link to="/podcast" className="pill-gold">{t("All episodes")}</Link>
+            <Link to={`/podcast/${EPISODES[0].slug}`} className="pill border border-bone/40 font-semibold text-bone hover:border-gold hover:text-gold">{t("Latest episode")}</Link>
           </Reveal>
         </div>
 

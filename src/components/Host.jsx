@@ -6,7 +6,9 @@ import { HOST } from "../lib/data.js";
 import { Link } from "../lib/router.jsx";
 import { CurtainText, ImageReveal, Reveal } from "./ui/Reveal.jsx";
 
-export default function Host() {
+export default function Host({ pageTitle = false }) {
+  // on its own page this is the page title (h1); on the home page a section (h2)
+  const Heading = pageTitle ? "h1" : "h2";
   const { t } = useLang();
   return (
     <section id="host" aria-labelledby="host-h" className="scroll-mt-20 overflow-x-clip bg-earth">
@@ -60,11 +62,11 @@ export default function Host() {
 
         <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-4 sm:pl-6">
           <Reveal as="span" className="eyebrow flex items-center gap-2.5 text-gold"><span aria-hidden>✦</span> {t("Meet your host")}</Reveal>
-          <h2 id="host-h" className="h-display text-[clamp(30px,4.2vw,56px)]">
+          <Heading id="host-h" className="h-display text-[clamp(30px,4.2vw,56px)]">
             <CurtainText delay={0.05}>
               Felipe <Accent className="text-[1.2em] text-sun">Lerma</Accent>
             </CurtainText>
-          </h2>
+          </Heading>
           <Reveal as="p" delay={0.1} className="font-serif text-[26px] italic leading-snug text-bone">
             “{t(HOST.welcome)}”
           </Reveal>
@@ -80,7 +82,7 @@ export default function Host() {
             ))}
           </Reveal>
           <Reveal delay={0.25} className="mt-2 flex flex-wrap items-center gap-3">
-            <Link to="/#podcast" className="pill-gold">
+            <Link to="/podcast" className="pill-gold">
               <Play aria-hidden className="h-3.5 w-3.5" fill="currentColor" /> {t("Hear his podcast")}
             </Link>
             <Link to="/noticias" className="pill-ghost">{t("Read his takes")}</Link>

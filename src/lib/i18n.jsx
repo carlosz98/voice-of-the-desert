@@ -1,4 +1,5 @@
 import { NEWS_ES } from "./news-es.js";
+import { MEDIA_ES } from "./media-es.js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 /* English / Español switch for the whole site.
@@ -8,6 +9,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 const ES = {
   ...NEWS_ES,
+  ...MEDIA_ES,
   // site
   "Skip to content": "Saltar al contenido",
   "Voice of the Desert": "La Voz del Desierto",
@@ -338,6 +340,10 @@ const ES_PATTERNS = [
   [/^(\d+)m ago$/, "hace $1 min"],
   [/^(\d+)h ago$/, "hace $1 h"],
   [/^(\d+)d ago$/, "hace $1 d"],
+  [/^(\d+)w ago$/, "hace $1 sem"],
+  [/^1mo ago$/, "hace 1 mes"],
+  [/^(\d+)mo ago$/, "hace $1 meses"],
+  [/^(.+) plays$/, "$1 reproducciones"],
   [/^(\d+) min read$/, "$1 min de lectura"],
   [/^(.+) views$/, "$1 vistas"],
 ];

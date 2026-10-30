@@ -9,6 +9,12 @@ import Home from "./pages/Home.jsx";
 import NewsPage from "./pages/NewsPage.jsx";
 import ArticlePage from "./pages/ArticlePage.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import VideosPage, { VideoPage } from "./pages/VideosPage.jsx";
+import MusicPage from "./pages/MusicPage.jsx";
+import PodcastPage, { EpisodePage } from "./pages/PodcastPage.jsx";
+import FelipePage from "./pages/FelipePage.jsx";
+import VersePage from "./pages/VersePage.jsx";
+import UploadPage from "./pages/UploadPage.jsx";
 
 function SkipLink() {
   const { t } = useLang();
@@ -40,6 +46,14 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/noticias" element={<NewsPage />} />
           <Route path="/noticias/:slug" element={<ArticlePage />} />
+          <Route path="/videos" element={<VideosPage />} />
+          <Route path="/videos/:slug" element={<VideoPage />} />
+          <Route path="/musica" element={<MusicPage />} />
+          <Route path="/podcast" element={<PodcastPage />} />
+          <Route path="/podcast/:slug" element={<EpisodePage />} />
+          <Route path="/felipe" element={<FelipePage />} />
+          <Route path="/versiculo" element={<VersePage />} />
+          <Route path="/subir" element={<UploadPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -82,7 +82,7 @@ export default function Navbar() {
             </ul>
           </nav>
           <LangToggle className="ml-auto lg:ml-0" />
-          <Link to="/#upload" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
+          <Link to="/subir" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
             <Upload aria-hidden className="h-4 w-4" /> {t("Upload")}
           </Link>
           <button
@@ -100,7 +100,7 @@ export default function Navbar() {
       <Sheet open={open} onClose={() => setOpen(false)} title={t("Menu")}>
         <nav aria-label="Mobile">
           <ul className="flex flex-col">
-            {[...NAV, { href: "/#upload", label: "Upload" }].map(item => (
+            {[...NAV, { href: "/subir", label: "Upload" }].map(item => (
               <li key={item.href}>
                 <Link
                   to={item.href}
