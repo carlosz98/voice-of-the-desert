@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useLang } from "./lib/i18n.jsx";
 import { Router, ScrollManager } from "./lib/router.jsx";
 import Navbar from "./components/Navbar.jsx";
@@ -15,6 +15,7 @@ import PodcastPage, { EpisodePage } from "./pages/PodcastPage.jsx";
 import FelipePage from "./pages/FelipePage.jsx";
 import VersePage from "./pages/VersePage.jsx";
 import UploadPage from "./pages/UploadPage.jsx";
+import PanelPage from "./pages/PanelPage.jsx";
 
 function SkipLink() {
   const { t } = useLang();
@@ -34,10 +35,10 @@ function SkipLink() {
   );
 }
 
-export default function App() {
+/* The public site: menu, pages, footer and the little music player. */
+function Site() {
   return (
-    <Router>
-      <ScrollManager />
+    <>
       <SkipLink />
       <ScrollProgress />
       <Navbar />
@@ -59,6 +60,21 @@ export default function App() {
       </main>
       <Footer />
       <MiniPlayer />
+    </>
+  );
+}
+
+/* Felipe's panel has its own screen, without the site's menu and footer. */
+function Shell() {
+  const { pathname } = useLocation();
+  return pathname.startsWith("/panel") ? <PanelPage /> : <Site />;
+}
+
+export default function App() {
+  return (
+    <Router>
+      <ScrollManager />
+      <Shell />
     </Router>
   );
 }
