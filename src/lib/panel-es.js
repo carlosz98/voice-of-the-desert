@@ -135,6 +135,8 @@ export const PANEL_ES = {
   "Remove from my stations": "Quitar de mis estaciones",
   "Save to my stations": "Guardar en mis estaciones",
   "Live radio": "Radio en vivo",
+  "Music from Chihuahua · Listen now": "Música de Chihuahua · Escuche ahora",
+  "Listen to music": "Escuchar música",
   "Enter your code to write and upload.": "Escriba su código para escribir y subir.",
   Code: "Código",
   "That code isn't right. Try again.": "Ese código no es. Intente de nuevo.",

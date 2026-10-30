@@ -17,6 +17,7 @@ import VersePage from "./pages/VersePage.jsx";
 import UploadPage from "./pages/UploadPage.jsx";
 import PanelPage from "./pages/PanelPage.jsx";
 import RadioPage from "./pages/RadioPage.jsx";
+import { FEATURES } from "./lib/features.js";
 
 function SkipLink() {
   const { t } = useLang();
@@ -51,7 +52,7 @@ function Site() {
           <Route path="/videos" element={<VideosPage />} />
           <Route path="/videos/:slug" element={<VideoPage />} />
           <Route path="/musica" element={<MusicPage />} />
-          <Route path="/radio" element={<RadioPage />} />
+          {FEATURES.RADIO && <Route path="/radio" element={<RadioPage />} />}
           <Route path="/podcast" element={<PodcastPage />} />
           <Route path="/podcast/:slug" element={<EpisodePage />} />
           <Route path="/felipe" element={<FelipePage />} />

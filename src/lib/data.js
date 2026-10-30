@@ -2,6 +2,7 @@
 // Later this comes from the database (uploads, articles, tracks, episodes).
 
 import { img, PHOTOS } from "./photos.js";
+import { FEATURES } from "./features.js";
 export { PHOTOS };
 
 /* Hero slides. `mask` (or null to skip the effect) is a cut-out of the photo's subject (horses, towers,
@@ -249,7 +250,7 @@ export const HOST = {
 export const NAV = [
   { href: "/videos", label: "Watch" },
   { href: "/musica", label: "Listen" },
-  { href: "/radio", label: "Radio" },
+  ...(FEATURES.RADIO ? [{ href: "/radio", label: "Radio" }] : []),
   { href: "/felipe", label: "Felipe" },
   { href: "/versiculo", label: "Verse" },
   { href: "/podcast", label: "Podcast" },

@@ -5,6 +5,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Moon, Pause, Play, Sun, 
 import { HOST, SLIDES } from "../lib/data.js";
 import { usePlayer } from "../lib/player.jsx";
 import { Link, MotionLink } from "../lib/router.jsx";
+import { FEATURES } from "../lib/features.js";
 
 const DURATION = 7000; // ms each photo stays up
 const FADE = 1.2;      // s crossfade between photos
@@ -244,17 +245,17 @@ export default function Hero() {
           of it. Everything else is z-40: always readable and clickable. */}
       <div className="container-x relative flex flex-1 flex-col items-center pb-40 pt-[128px] text-center sm:pt-[136px]">
         <MotionLink
-          to="/radio"
+          to={FEATURES.RADIO ? "/radio" : "/musica"}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           className="relative z-40 inline-flex min-h-[40px] items-center gap-2.5 rounded-full border border-bone/30 bg-earth/40 px-4 py-1.5 font-mono text-[12px] uppercase tracking-[0.2em] transition-colors hover:border-gold hover:text-sun sm:text-[13px]"
         >
           <span className="relative h-2 w-2">
-            <span className="absolute inset-0 animate-ping2 rounded-full bg-[#E5484D]" />
-            <span className="absolute inset-0 rounded-full bg-[#E5484D]" />
+            <span className={`absolute inset-0 animate-ping2 rounded-full ${FEATURES.RADIO ? "bg-[#E5484D]" : "bg-gold"}`} />
+            <span className={`absolute inset-0 rounded-full ${FEATURES.RADIO ? "bg-[#E5484D]" : "bg-gold"}`} />
           </span>
-          {t("Live radio · Chihuahua and Mexico")}
+          {t(FEATURES.RADIO ? "Live radio · Chihuahua and Mexico" : "Music from Chihuahua · Listen now")}
         </MotionLink>
 
         <motion.p
@@ -320,7 +321,7 @@ export default function Hero() {
             <Link to="/#watch" className="pill-gold min-h-[52px] px-7 text-base shadow-[0_10px_40px_rgba(230,176,74,0.4)]">
               <Play aria-hidden className="h-4 w-4" fill="currentColor" /> {t("Watch now")}
             </Link>
-            <Link to="/radio" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</Link>
+            <Link to={FEATURES.RADIO ? "/radio" : "/musica"} className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t(FEATURES.RADIO ? "Listen live" : "Listen to music")}</Link>
           </motion.div>
 
           {/* on phones the host card is hidden, so Felipe says hello here */}

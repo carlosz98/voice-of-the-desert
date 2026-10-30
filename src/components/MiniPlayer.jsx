@@ -5,6 +5,7 @@ import { Loader2, Pause, Play, SkipForward, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useRadio } from "../lib/radio-live.jsx";
 import { Link } from "../lib/router.jsx";
+import { FEATURES } from "../lib/features.js";
 import { usePlayer } from "../lib/player.jsx";
 
 /* Small player pinned to the bottom once music is playing and the hero is
@@ -102,7 +103,7 @@ function RadioMini() {
 export default function MiniPlayer() {
   const { station } = useRadio();
   const { pathname } = useLocation();
-  if (station && pathname !== "/radio") {
+  if (FEATURES.RADIO && station && pathname !== "/radio") {
     return <AnimatePresence><RadioMini /></AnimatePresence>;
   }
   return <MusicMini />;
