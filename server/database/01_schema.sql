@@ -7,6 +7,7 @@
 --
 --  One table for each thing on the site:
 --    admins       → who can sign in to "Mi panel" (Felipe)
+--    admin_tokens → keeps Felipe signed in after he logs in
 --    articles     → the news stories + Felipe's take on each
 --    videos       → the videos page
 --    songs        → the music page
@@ -25,7 +26,7 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;            -- read this file as utf8 too (for the ñ in Norteño)
 
 -- Start clean every time this file runs (children first, because of the links)
-DROP TABLE IF EXISTS dedications, comments, messages, desk_notes,
+DROP TABLE IF EXISTS admin_tokens, dedications, comments, messages, desk_notes,
                      episodes, songs, videos, articles, admins;
 
 
@@ -39,6 +40,20 @@ CREATE TABLE admins (
   email         VARCHAR(150) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- ------------------------------------------------------------
+-- admin_tokens: when Felipe signs in, PHP gives his browser a
+-- long random "ticket" (token). The browser sends it back with
+-- every panel action, so he doesn't type his password each time.
+-- Tickets expire after 7 days.
+-- ------------------------------------------------------------
+CREATE TABLE admin_tokens (
+  token      CHAR(64)  PRIMARY KEY,
+  admin_id   INT       NOT NULL,
+  expires_at DATETIME  NOT NULL,
+  FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
 );
 
 

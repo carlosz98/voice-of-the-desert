@@ -54,6 +54,7 @@ add("-- ============================================================");
 add("");
 add("USE voz_del_desierto;");
 add("SET NAMES utf8mb4;");
+add("SET time_zone = '+00:00';  -- dates in UTC, same as the API");
 add("");
 
 // ---------- Felipe's login ----------
