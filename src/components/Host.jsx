@@ -3,6 +3,7 @@ import { Accent } from "./ui/Accent.jsx";
 import { motion } from "framer-motion";
 import { Play, UserRound } from "lucide-react";
 import { HOST } from "../lib/data.js";
+import { Link } from "../lib/router.jsx";
 import { CurtainText, ImageReveal, Reveal } from "./ui/Reveal.jsx";
 
 export default function Host() {
@@ -79,10 +80,10 @@ export default function Host() {
             ))}
           </Reveal>
           <Reveal delay={0.25} className="mt-2 flex flex-wrap items-center gap-3">
-            <a href="#podcast" className="pill-gold">
+            <Link to="/#podcast" className="pill-gold">
               <Play aria-hidden className="h-3.5 w-3.5" fill="currentColor" /> {t("Hear his podcast")}
-            </a>
-            <a href="#news" className="pill-ghost">{t("Read his takes")}</a>
+            </Link>
+            <Link to="/noticias" className="pill-ghost">{t("Read his takes")}</Link>
             <a href="#" className="inline-flex min-h-[44px] items-center px-1.5 font-semibold text-dust hover:text-gold">{t(HOST.social)}</a>
           </Reveal>
         </div>

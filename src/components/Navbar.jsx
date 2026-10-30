@@ -4,6 +4,8 @@ import { Menu, Upload } from "lucide-react";
 import { NAV } from "../lib/data.js";
 import { Sheet } from "./ui/Sheet.jsx";
 import TopStrip from "./TopStrip.jsx";
+import { Link } from "../lib/router.jsx";
+import { useLocation } from "react-router-dom";
 import { LangToggle, useLang } from "../lib/i18n.jsx";
 
 export function Logo({ className = "" }) {
@@ -20,6 +22,11 @@ export function Logo({ className = "" }) {
 }
 
 export default function Navbar() {
+  const { pathname } = useLocation();
+  // only real pages light up; section links on the home page stay plain
+  // only the home page has a photo behind the menu; other pages get a solid bar
+  const onHome = pathname === "/";
+  const isActive = href => !href.includes("#") && pathname.startsWith(href);
   const { t } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -38,7 +45,7 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300 ${
-          scrolled ? "border-b border-bone/10 bg-earth/80 backdrop-blur-lg" : "border-b border-transparent"
+          scrolled ? "border-b border-bone/10 bg-earth/80 backdrop-blur-lg" : onHome ? "border-b border-transparent" : "border-b border-bone/10 bg-earth"
         }`}
       >
         <AnimatePresence initial={false}>
@@ -56,24 +63,28 @@ export default function Navbar() {
           )}
         </AnimatePresence>
         <div className="container-x flex h-[72px] items-center gap-6">
-          <a href="#top" aria-label={t("Voice of the Desert, home")} className="text-cream">
+          <Link to="/" aria-label={t("Voice of the Desert, home")} className="text-cream">
             <Logo />
-          </a>
+          </Link>
           <nav aria-label="Main" className="hidden flex-1 justify-center lg:flex">
             <ul className="flex gap-1">
               {NAV.map(item => (
                 <li key={item.href}>
-                  <a href={item.href} className="nav-link inline-flex min-h-[44px] items-center px-4 text-[13px] font-semibold uppercase tracking-[0.12em] text-bone transition-colors hover:text-gold">
+                  <Link
+                    to={item.href}
+                    aria-current={isActive(item.href) ? "page" : undefined}
+                    className={`nav-link inline-flex min-h-[44px] items-center px-4 text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors hover:text-gold ${isActive(item.href) ? "text-gold" : "text-bone"}`}
+                  >
                     {t(item.label)}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </nav>
           <LangToggle className="ml-auto lg:ml-0" />
-          <a href="#upload" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
+          <Link to="/#upload" className="pill-ghost hidden bg-earth/35 backdrop-blur-md sm:inline-flex">
             <Upload aria-hidden className="h-4 w-4" /> {t("Upload")}
-          </a>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -89,15 +100,15 @@ export default function Navbar() {
       <Sheet open={open} onClose={() => setOpen(false)} title={t("Menu")}>
         <nav aria-label="Mobile">
           <ul className="flex flex-col">
-            {[...NAV, { href: "#upload", label: "Upload" }].map(item => (
+            {[...NAV, { href: "/#upload", label: "Upload" }].map(item => (
               <li key={item.href}>
-                <a
-                  href={item.href}
+                <Link
+                  to={item.href}
                   onClick={() => setOpen(false)}
                   className="flex min-h-[56px] items-center border-b border-bone/10 font-display text-xl font-bold uppercase tracking-[0.08em] text-bone transition-colors hover:text-gold"
                 >
                   {t(item.label)}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

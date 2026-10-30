@@ -1,3 +1,4 @@
+import { NEWS_ES } from "./news-es.js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 /* English / Español switch for the whole site.
@@ -6,6 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  * Anything missing from the dictionary falls back to English. */
 
 const ES = {
+  ...NEWS_ES,
   // site
   "Skip to content": "Saltar al contenido",
   "Voice of the Desert": "La Voz del Desierto",
@@ -359,7 +361,6 @@ export function LangProvider({ children }) {
   const setLang = useCallback(l => setLangState(l), []);
   useEffect(() => {
     document.documentElement.lang = lang;
-    document.title = translate(lang, "Voice of the Desert");
   }, [lang]);
   const t = useCallback(s => translate(lang, s), [lang]);
   const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);

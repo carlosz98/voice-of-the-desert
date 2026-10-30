@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } fr
 import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Moon, Pause, Play, Sun, Sunset } from "lucide-react";
 import { HOST, SLIDES } from "../lib/data.js";
 import { usePlayer } from "../lib/player.jsx";
+import { Link, MotionLink } from "../lib/router.jsx";
 
 const DURATION = 7000; // ms each photo stays up
 const FADE = 1.2;      // s crossfade between photos
@@ -102,8 +103,8 @@ function Greeting({ className = "" }) {
 function HostCard() {
   const { t } = useLang();
   return (
-    <motion.a
-      href="#host"
+    <MotionLink
+      to="/#host"
       className="glass group hidden w-[330px] items-center gap-3.5 rounded-2xl p-3.5 pr-4 md:flex"
       animate={{ y: [0, -12, 0] }}
       transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
@@ -117,7 +118,7 @@ function HostCard() {
         <span className="text-[13px] leading-snug text-haze">{t("News, notes, music and the podcast, all with his take.")}</span>
       </span>
       <ArrowRight aria-hidden className="h-5 w-5 flex-none text-sun transition-transform duration-200 group-hover:translate-x-1" />
-    </motion.a>
+    </MotionLink>
   );
 }
 
@@ -315,15 +316,15 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.9 }}
             className="flex flex-wrap justify-center gap-3"
           >
-            <a href="#watch" className="pill-gold min-h-[52px] px-7 text-base shadow-[0_10px_40px_rgba(230,176,74,0.4)]">
+            <Link to="/#watch" className="pill-gold min-h-[52px] px-7 text-base shadow-[0_10px_40px_rgba(230,176,74,0.4)]">
               <Play aria-hidden className="h-4 w-4" fill="currentColor" /> {t("Watch now")}
-            </a>
-            <a href="#listen" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</a>
+            </Link>
+            <Link to="/#listen" className="pill-ghost min-h-[52px] bg-earth/35 px-7 text-base backdrop-blur-md">{t("Listen live")}</Link>
           </motion.div>
 
           {/* on phones the host card is hidden, so Felipe says hello here */}
-          <motion.a
-            href="#host"
+          <MotionLink
+            to="/#host"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 1.1 }}
@@ -334,7 +335,7 @@ export default function Hero() {
               <Greeting className="font-mono text-[11px] uppercase tracking-[0.16em] text-sun" />
               <span className="text-[13px] text-cream">{t("I'm Felipe. Welcome, make yourself at home.")}</span>
             </span>
-          </motion.a>
+          </MotionLink>
         </motion.div>
       </div>
 

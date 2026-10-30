@@ -4,8 +4,10 @@ import { useLang } from "../../lib/i18n.jsx";
  * A soft shine passes over it now and then (off for reduced motion). */
 export function NewBadge({ className = "" }) {
   const { t } = useLang();
+  // keep a caller's "absolute" placement; otherwise it sits in the text flow
+  const pos = /\babsolute\b/.test(className) ? "" : "relative";
   return (
-    <span className={`relative inline-flex items-center overflow-hidden rounded-full bg-gold px-2 py-0.5 align-middle font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-umber ${className}`}>
+    <span className={`${pos} inline-flex items-center overflow-hidden rounded-full bg-gold px-2 py-0.5 align-middle font-sans text-[11px] font-bold uppercase tracking-[0.08em] text-umber ${className}`}>
       {t("New")}
       <span aria-hidden className="absolute inset-y-0 -left-full w-1/2 animate-shine bg-gradient-to-r from-transparent via-white/60 to-transparent motion-reduce:hidden" />
     </span>
