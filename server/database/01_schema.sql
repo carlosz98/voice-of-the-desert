@@ -18,6 +18,7 @@
 --    comments     → comments on articles, videos AND episodes
 --    dedications  → "dedicate a song" on the music page
 --    messages     → "Write to Felipe" on his profile
+--    submissions  → what people send from the "Upload" page
 --    desk_notes   → "From Felipe's desk", his short notes
 -- ============================================================
 
@@ -29,7 +30,7 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;            -- read this file as utf8 too (for the ñ in Norteño)
 
 -- Start clean every time this file runs (children first, because of the links)
-DROP TABLE IF EXISTS sessions, admin_tokens, dedications, comments, messages, desk_notes,
+DROP TABLE IF EXISTS submissions, sessions, admin_tokens, dedications, comments, messages, desk_notes,
                      episodes, songs, videos, articles, users, admins;
 
 
@@ -203,6 +204,34 @@ CREATE TABLE messages (
   is_read    BOOLEAN      DEFAULT FALSE,
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+
+-- ------------------------------------------------------------
+-- submissions: what people send Felipe from the "Upload" page
+-- (a video, a song, a podcast, a news tip or a photo).
+-- You need an account to send one. Felipe reviews each:
+--   pending  → waiting for Felipe
+--   approved → he'll share it
+--   declined → not this time (his note says why)
+-- The file itself goes to Cloud Storage in the cloud step;
+-- here we keep its name and, later, its link (file_url).
+-- ------------------------------------------------------------
+CREATE TABLE submissions (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT          NOT NULL,
+  kind        ENUM('video','music','podcast','news','photo') NOT NULL,
+  title       VARCHAR(200) NOT NULL,
+  description TEXT,
+  link        VARCHAR(500),                   -- a YouTube / Facebook / news link instead of a file
+  file_name   VARCHAR(255),                   -- "boda-de-mi-tia.mp4"
+  file_url    VARCHAR(500),                   -- the Cloud Storage link (cloud step)
+  status      ENUM('pending','approved','declined') NOT NULL DEFAULT 'pending',
+  felipe_note TEXT,                           -- Felipe's answer to the person
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at DATETIME,
+  INDEX (status),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 

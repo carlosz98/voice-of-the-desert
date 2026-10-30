@@ -138,5 +138,17 @@ for (const n of d.DESK) {
 }
 add("");
 
+// ---------- submissions (from the test account, for Felipe to review) ----------
+const { SAMPLE_SUBMISSIONS } = await import("../src/lib/sample-submissions.js");
+add("-- ---------- submissions from the Upload page ----------");
+for (const s of SAMPLE_SUBMISSIONS) {
+  add(
+    `INSERT INTO submissions (user_id, kind, title, description, link, file_name, status, felipe_note, created_at, reviewed_at) VALUES (` +
+      [s.user_id, q(s.kind), q(s.title), q(s.description), q(s.link), q(s.file_name), q(s.status), q(s.felipe_note), `NOW() - INTERVAL ${s.days_ago} DAY`,
+       s.status === "pending" ? "NULL" : `NOW() - INTERVAL ${s.days_ago - 1} DAY`].join(", ") + ");"
+  );
+}
+add("");
+
 writeFileSync("server/database/02_seed.sql", lines.join("\n") + "\n");
 console.log(`wrote server/database/02_seed.sql (${lines.length} lines)`);

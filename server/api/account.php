@@ -2,7 +2,7 @@
 /* ============================================================
  *  account.php: your own account (you must be signed in)
  *
- *  GET    account.php                         → your details + how many comments you've written
+ *  GET    account.php                         → your details + how many comments and submissions
  *  PUT    account.php  {"name": "...", "town": "..."}           → change your name or town
  *  PUT    account.php  {"current_password": "...", "new_password": "..."} → change password
  *  DELETE account.php  {"password": "..."}    → delete your account and your comments
@@ -18,8 +18,9 @@ function my_row(int $id): array
 }
 
 if (method() === 'GET') {
-    $count = (int)query('SELECT COUNT(*) FROM comments WHERE user_id = ?', [$me['id']])->fetchColumn();
-    send(public_user($me) + ['member_since' => $me['created_at'], 'comment_count' => $count]);
+    $comments    = (int)query('SELECT COUNT(*) FROM comments WHERE user_id = ?', [$me['id']])->fetchColumn();
+    $submissions = (int)query('SELECT COUNT(*) FROM submissions WHERE user_id = ?', [$me['id']])->fetchColumn();
+    send(public_user($me) + ['member_since' => $me['created_at'], 'comment_count' => $comments, 'submission_count' => $submissions]);
 }
 
 if (method() === 'PUT') {

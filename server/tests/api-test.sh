@@ -88,8 +88,32 @@ check "fake token 401" "401" "$(code -H "Authorization: Bearer $(printf 'a%.0s' 
 check "SQL injection is just text" "200" "$(code "$A/articles.php?q=%27%20OR%201%3D1%20--")"
 check "injection finds nothing" "[]" "$(curl -s "$A/articles.php?q=%27%20OR%201%3D1%20--")"
 
+echo "--- submissions (Upload page)"
+check "guest can't send 401" "401" "$(code -X POST -H "$J" -d '{"kind":"video","title":"x","link":"https://example.com"}' $A/submissions.php)"
+r=$(curl -s -X POST -H "$UH" -H "$J" -d '{"kind":"video","title":"Boda en Delicias","description":"La banda tocó toda la noche","file_name":"boda.mp4"}' $A/submissions.php)
+check "send a video" '"status":"pending"' "$r"
+check "sender is me" '"sender_name":"Carlos Prueba"' "$r"
+SUB=$(echo "$r" | field id)
+r=$(curl -s -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"Feria en Parral","link":"https://example.com/feria"}' $A/submissions.php)
+check "send a news link" '"link":"https://example.com/feria"' "$r"
+SUB2=$(echo "$r" | field id)
+check "needs file or link 400" "400" "$(code -X POST -H "$UH" -H "$J" -d '{"kind":"photo","title":"x"}' $A/submissions.php)"
+check "bad link 400" "400" "$(code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"x","link":"javascript:alert(1)"}' $A/submissions.php)"
+check "bad kind 400" "400" "$(code -X POST -H "$UH" -H "$J" -d '{"kind":"movie","title":"x","link":"https://example.com"}' $A/submissions.php)"
+check "missing title 400" "400" "$(code -X POST -H "$UH" -H "$J" -d '{"kind":"news","link":"https://example.com"}' $A/submissions.php)"
+r=$(curl -s -H "$UH" $A/submissions.php)
+check "I see my 2" "2" "$(echo "$r" | php -r 'echo count(json_decode(stream_get_contents(STDIN)));')"
+check "I don't see Rosa's" "0" "$(echo "$r" | grep -c 'night market')"
+check "user can't list everyone's 403" "403" "$(code -H "$UH" "$A/submissions.php?all=1")"
+check "user can't approve 403" "403" "$(code -X PUT -H "$UH" -H "$J" -d '{"status":"approved"}' "$A/submissions.php?id=$SUB")"
+check "can't remove Rosa's 403" "403" "$(code -X DELETE -H "$UH" "$A/submissions.php?id=1")"
+check "take back my pending one" "200" "$(code -X DELETE -H "$UH" "$A/submissions.php?id=$SUB2")"
+check "spam limit: 10 a day" "429" "$(for i in 1 2 3 4 5 6 7 8 9 10; do code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"x","link":"https://example.com"}' $A/submissions.php >/dev/null; done; code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"x","link":"https://example.com"}' $A/submissions.php)"
+$SQL "DELETE FROM submissions WHERE title='x'" >/dev/null
+
 echo "--- my account"
 r=$(curl -s -H "$UH" $A/account.php); check "account details" '"comment_count":0' "$r"
+check "account counts submissions" '"submission_count":1' "$r"
 r=$(curl -s -X PUT -H "$UH" -H "$J" -d '{"name":"Carlos Z.","town":"Parral"}' $A/account.php); check "change name/town" '"name":"Carlos Z."' "$r"
 check "wrong current password 401" "401" "$(code -X PUT -H "$UH" -H "$J" -d '{"current_password":"nope","new_password":"nopal4567"}' $A/account.php)"
 check "change password" "200" "$(code -X PUT -H "$UH" -H "$J" -d '{"current_password":"cactus123","new_password":"nopal4567"}' $A/account.php)"
@@ -99,6 +123,15 @@ check "new password works" "201" "$(code -X POST -H "$J" -d '{"email":"carlos@ex
 echo "--- Felipe signs in like everyone, and gets his panel"
 r=$(curl -s -X POST -H "$J" -d '{"email":"felipe@example.com","password":"desierto"}' $A/login.php); check "felipe login role" '"role":"felipe"' "$r"
 H="Authorization: Bearer $(echo "$r" | field token)"
+r=$(curl -s -H "$H" "$A/submissions.php?all=1&status=pending"); check "felipe sees pending" 'Boda en Delicias' "$r"
+check "pending list has Rosa's too" 'The night market' "$r"
+check "felipe sees sender email" '"sender_email":"carlos@example.com"' "$r"
+r=$(curl -s -X PUT -H "$H" -H "$J" -d '{"status":"approved","felipe_note":"¡Qué bonita boda! La comparto el domingo."}' "$A/submissions.php?id=$SUB")
+check "felipe approves with note" '"status":"approved"' "$r"
+check "reviewed time set" '"reviewed_at":"20' "$r"
+r=$(curl -s -H "$UH" $A/submissions.php); check "user sees Felipe's note" 'La comparto el domingo' "$r"
+check "can't take back once reviewed 409" "409" "$(code -X DELETE -H "$UH" "$A/submissions.php?id=$SUB")"
+check "bad status 400" "400" "$(code -X PUT -H "$H" -H "$J" -d '{"status":"maybe"}' "$A/submissions.php?id=$SUB")"
 r=$(curl -s -H "$H" $A/messages.php); check "felipe reads messages" 'Hola Felipe' "$r"
 check "sees sender email" '"sender_email":"carlos@example.com"' "$r"
 r=$(curl -s -X POST -H "$H" -H "$J" -d '{"title":"La feria de Santa Rita","summary":"Prueba","category":"Local","body":["Uno.","Dos."],"take":"¡Vayan!"}' $A/articles.php)
@@ -133,6 +166,7 @@ check "his ticket is dead" "401" "$(code -H "$H" $A/messages.php)"
 r=$(curl -s -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"Un comentario antes de irme"}' $A/comments.php)
 check "wrong password can't delete account" "401" "$(code -X DELETE -H "$UH" -H "$J" -d '{"password":"nope"}' $A/account.php)"
 check "delete my account" "200" "$(code -X DELETE -H "$UH" -H "$J" -d '{"password":"nopal4567"}' $A/account.php)"
+check "my submissions went with it" "0" "$($SQL "SELECT COUNT(*) FROM submissions WHERE title='Boda en Delicias'")"
 check "my comments went with it" "0" "$($SQL "SELECT COUNT(*) FROM comments WHERE name='Carlos Z.'")"
 check "my dedication stays, unlinked" "1" "$($SQL "SELECT COUNT(*) FROM dedications WHERE name='Carlos Prueba' AND user_id IS NULL")"
 check "my ticket is dead" "401" "$(code -H "$UH" $A/login.php)"

@@ -10,8 +10,8 @@ SET time_zone = '+00:00';  -- dates in UTC, same as the API
 -- Felipe is user 1, with role 'felipe'. Demo password: desierto
 -- A visitor account for testing: rosa@example.com / demo1234
 -- (only the hashes are stored; change both before going live)
-INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', '$2y$10$mgeLc3J/ALDiyPPuSLZYieo4Fh7zzTPn5eg5fJY91ExDONSUGUTzK', 'felipe', 'Chihuahua');
-INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', '$2y$10$P6aI2Fe.ctELVXSlXK.yMeeQ/BdT5OksKNnd4ALwn1NWtOujLCVyS', 'user', 'Chihuahua');
+INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', '$2y$10$xgJSUwlxqYI1olwBKwSfMuxVHaWgmgLF8cAjOoQTRyPVnua9xD4y.', 'felipe', 'Chihuahua');
+INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', '$2y$10$Nf5slyXmruYqZX4.ty9uMOn/66MrEAx1fWJQxHy3sONu4eti6/Bim', 'user', 'Chihuahua');
 
 -- ---------- articles (+ their comments) ----------
 INSERT INTO articles (slug, category, title, summary, body, source, take, long_take, photo, photo_pos, read_minutes, is_lead, published_at) VALUES ('mercado-nocturno-plaza-de-armas', 'Local', 'The night market is back in the Plaza de Armas after four years, and the whole city came out', 'Forty stalls lined the Plaza de Armas in front of the cathedral on Saturday as the night market returned, with food, music and crafts until midnight. Organizers say it will run every second Saturday through spring.', 'For the first time in four years, the cathedral square filled with lanterns, smoke from the grills and the sound of a brass band tuning up. The night market, once a fixture of the town calendar, returned on Saturday with forty stalls and a crowd that organizers put at nearly three thousand.
@@ -186,4 +186,8 @@ INSERT INTO desk_notes (kind, text, meta, photo, created_at) VALUES ('note', 'Up
 INSERT INTO desk_notes (kind, text, meta, photo, created_at) VALUES ('music', 'Added a new song to the playlist. Play it loud with the windows down.', '[Track title] · [Artist]', NULL, NOW() - INTERVAL 1 DAY);
 INSERT INTO desk_notes (kind, text, meta, photo, created_at) VALUES ('podcast', 'Recorded episode 13 today with a guest who has walked the old trail on foot. Out on Friday.', 'Voices of the world · Ep. 13', NULL, NOW() - INTERVAL 2 DAY);
 INSERT INTO desk_notes (kind, text, meta, photo, created_at) VALUES ('photo', 'The hills behind the old adobe, after the rain.', NULL, 'img/adobe.webp', NOW() - INTERVAL 3 DAY);
+
+-- ---------- submissions from the Upload page ----------
+INSERT INTO submissions (user_id, kind, title, description, link, file_name, status, felipe_note, created_at, reviewed_at) VALUES (2, 'video', 'The night market from the cathedral steps', 'I filmed the band and the tamale carts on Saturday. Six minutes, filmed with my phone.', NULL, 'mercado-nocturno.mp4', 'pending', NULL, NOW() - INTERVAL 1 DAY, NULL);
+INSERT INTO submissions (user_id, kind, title, description, link, file_name, status, felipe_note, created_at, reviewed_at) VALUES (2, 'news', 'The library in Delicias is opening on Sundays', 'Starting next month, with story time for kids at 11.', 'https://example.com/biblioteca-delicias', NULL, 'approved', 'Thank you, Rosa. I''ll share it this week with a few words.', NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 3 DAY);
 
