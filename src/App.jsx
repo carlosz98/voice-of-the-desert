@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { useLang } from "./lib/i18n.jsx";
 import { Router, ScrollManager } from "./lib/router.jsx";
 import Navbar from "./components/Navbar.jsx";
@@ -55,6 +55,7 @@ function Site() {
           <Route path="/felipe" element={<FelipePage />} />
           <Route path="/versiculo" element={<VersePage />} />
           <Route path="/subir" element={<UploadPage />} />
+          <Route path="/panel" element={<PanelPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -64,17 +65,11 @@ function Site() {
   );
 }
 
-/* Felipe's panel has its own screen, without the site's menu and footer. */
-function Shell() {
-  const { pathname } = useLocation();
-  return pathname.startsWith("/panel") ? <PanelPage /> : <Site />;
-}
-
 export default function App() {
   return (
     <Router>
       <ScrollManager />
-      <Shell />
+      <Site />
     </Router>
   );
 }

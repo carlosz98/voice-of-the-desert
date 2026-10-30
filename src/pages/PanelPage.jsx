@@ -1,27 +1,25 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BookOpen, Check, ChevronRight, Clapperboard, Eye, EyeOff, FileText, Home as HomeIcon, ImagePlus, Lock as LockIcon, LogOut,
+  BookOpen, Check, ChevronRight, Clapperboard, Eye, EyeOff, FileText, Home as HomeIcon, ImagePlus, LogOut,
   MessageCircle, Mic, Music, NotebookPen, Plus, Send, Trash2, Upload, X,
 } from "lucide-react";
 import { ALL_STORIES, ALL_VIDEOS, EPISODES, GENRES, HOST, NEWS_FILTERS, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
 import { greetingFor, useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
+import { useAuth } from "../lib/auth.jsx";
+import { Navigate } from "react-router-dom";
 import { StoryCard } from "../components/news/parts.jsx";
 import { VideoCard } from "../pages/VideosPage.jsx";
 import NextEpisode from "../components/NextEpisode.jsx";
 
 /* ───────────────────────────────────────────────────────────────────────
- * Felipe's panel (/panel). Not in any menu; it opens with a code.
+ * Felipe's panel (/panel).
  *
- * DEMO ONLY: there is no server yet, so nothing here is saved anywhere and
- * the code below is not real security (anyone can read it in the page's
- * source). When the database and hosting are added, this page will sit
- * behind a real login and "Publicar" will send to the server.
+ * Only Felipe sees it: he signs in with his code at the bottom of his profile
+ * page (/felipe) and a "Mi panel" tab appears in the menu (see lib/auth.jsx).
+ * DEMO ONLY: there is no server yet, so nothing here is saved anywhere.
  * ─────────────────────────────────────────────────────────────────────── */
-const DEMO_CODE = "desierto";
-const UNLOCK_KEY = "votd-panel"; // remembered for this browser tab only
-
 const SECTIONS = [
   { id: "home", icon: HomeIcon, label: "Overview" },
   { id: "article", icon: FileText, label: "Write news" },
@@ -531,66 +529,16 @@ function CommentsDesk() {
   );
 }
 
-/* ───────── lock screen ───────── */
-
-function LockScreen({ onOpen }) {
-  const { t } = useLang();
-  const [code, setCode] = useState("");
-  const [wrong, setWrong] = useState(false);
-  const submit = e => {
-    e.preventDefault();
-    if (code.trim().toLowerCase() === DEMO_CODE) onOpen();
-    else { setWrong(true); setCode(""); }
-  };
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-earth px-5 text-bone">
-      <img src={PHOTOS.sunset} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
-      <span aria-hidden className="absolute inset-0 bg-gradient-to-b from-earth/60 to-earth" />
-      <motion.form
-        onSubmit={submit}
-        animate={wrong ? { x: [0, -10, 10, -6, 6, 0] } : {}}
-        transition={{ duration: 0.4 }}
-        className="relative flex w-full max-w-[420px] flex-col items-center gap-5 rounded-[26px] bg-cream p-8 text-center text-umber shadow-2xl"
-      >
-        <img src={HOST.face} alt="" className="h-20 w-20 rounded-full border-2 border-gold object-cover" />
-        <h1 className="h-display text-3xl">{t("Felipe's panel")}</h1>
-        <p className="text-loam">{t("Enter your code to write and upload.")}</p>
-        <label className="w-full">
-          <span className="sr-only">{t("Code")}</span>
-          <span className="relative block">
-            <LockIcon aria-hidden className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-bark" />
-            <input
-              type="password"
-              autoFocus
-              autoComplete="current-password"
-              value={code}
-              onChange={e => { setCode(e.target.value); setWrong(false); }}
-              aria-invalid={wrong}
-              className={`${input} h-14 pl-12 text-center text-xl tracking-[0.3em]`}
-            />
-          </span>
-        </label>
-        {wrong && <p role="alert" className="font-semibold text-[#9A3412]">{t("That code isn't right. Try again.")}</p>}
-        <button type="submit" className="pill-dark min-h-[56px] w-full text-lg">{t("Enter")}</button>
-        <p className="text-xs text-bark">{t("Demo: in the real site this will be a proper login.")}</p>
-        <Link to="/" className="text-sm font-semibold text-ochre hover:underline">← {t("Back to the site")}</Link>
-      </motion.form>
-    </div>
-  );
-}
-
 /* ───────── the panel ───────── */
 
 export default function PanelPage() {
   const { t } = useLang();
-  const [open, setOpen] = useState(() => {
-    try { return sessionStorage.getItem(UNLOCK_KEY) === "1"; } catch { return false; }
-  });
+  const { isFelipe, signOut } = useAuth();
   const [section, setSection] = useState("home");
   const [recent, setRecent] = useState([]);
 
   useEffect(() => {
-    document.title = `${t("Felipe's panel")} · ${t("Voice of the Desert")}`;
+    document.title = `${t("My panel")} · ${t("Voice of the Desert")}`;
     // keep this page out of search engines
     const meta = document.createElement("meta");
     meta.name = "robots";
@@ -599,21 +547,14 @@ export default function PanelPage() {
     return () => meta.remove();
   }, [t]);
 
-  const unlock = () => {
-    try { sessionStorage.setItem(UNLOCK_KEY, "1"); } catch {}
-    setOpen(true);
-  };
-  const lock = () => {
-    try { sessionStorage.removeItem(UNLOCK_KEY); } catch {}
-    setOpen(false);
-  };
+  // only for Felipe: anyone else is sent to his profile, where the sign-in is
+  if (!isFelipe) return <Navigate to="/felipe#entrar" replace />;
+
   const publish = item => setRecent(r => [item, ...r].slice(0, 6));
   const go = id => {
     setSection(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  if (!open) return <LockScreen onOpen={unlock} />;
 
   const forms = {
     home: <Overview go={go} recent={recent} />,
@@ -627,47 +568,47 @@ export default function PanelPage() {
   };
 
   return (
-    <div className="paper min-h-screen bg-[#EFE6D6] text-umber lg:grid lg:grid-cols-[280px_1fr]">
-      {/* side menu (a scrolling row of tabs on phones) */}
-      <aside className="sticky top-0 z-30 bg-umber text-bone lg:h-screen">
-        <div className="flex items-center gap-3 px-5 py-4 lg:py-6">
-          <img src={HOST.face} alt="" className="h-11 w-11 rounded-full border-2 border-gold object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-lg font-semibold leading-tight">{t("Felipe's panel")}</p>
-            <p className="text-xs text-dust">{t("Voice of the Desert")}</p>
+    <div className="paper min-h-screen bg-[#EFE6D6] pb-16 pt-[128px] text-umber sm:pt-[140px]">
+      <div className="container-x grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr] [&>*]:min-w-0">
+        {/* panel menu: a column on computers, a scrolling row on phones */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-[22px] bg-umber p-3 text-bone shadow-[0_20px_50px_rgba(43,29,23,0.18)]">
+            <div className="flex items-center gap-3 px-2 py-2 lg:py-3">
+              <img src={HOST.face} alt="" className="h-11 w-11 rounded-full border-2 border-gold object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-lg font-semibold leading-tight">{t("My panel")}</p>
+                <p className="text-xs text-dust">{HOST.name}</p>
+              </div>
+            </div>
+            <nav aria-label={t("My panel")} className="overflow-x-auto">
+              <ul className="flex gap-1 lg:flex-col">
+                {SECTIONS.map(s => (
+                  <li key={s.id} className="flex-none">
+                    <button
+                      type="button"
+                      onClick={() => go(s.id)}
+                      aria-current={section === s.id ? "page" : undefined}
+                      className={`flex min-h-[48px] w-full items-center gap-3 whitespace-nowrap rounded-xl px-4 text-left text-[16px] font-semibold transition-colors ${section === s.id ? "bg-gold text-umber" : "text-haze hover:bg-bone/10 hover:text-cream"}`}
+                    >
+                      <s.icon aria-hidden className="h-5 w-5 flex-none" /> {t(s.label)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <button type="button" onClick={signOut} className="mt-2 flex min-h-[44px] w-full items-center gap-2 rounded-xl px-4 text-sm font-semibold text-dust hover:text-gold">
+              <LogOut aria-hidden className="h-4 w-4" /> {t("Sign out")}
+            </button>
           </div>
-          <button type="button" onClick={lock} aria-label={t("Close the panel")} title={t("Close the panel")} className="grid h-10 w-10 place-items-center rounded-full text-dust hover:text-gold lg:hidden">
-            <LogOut aria-hidden className="h-5 w-5" />
-          </button>
-        </div>
-        <nav aria-label={t("Felipe's panel")} className="overflow-x-auto px-3 pb-3 lg:px-4">
-          <ul className="flex gap-1 lg:flex-col">
-            {SECTIONS.map(s => (
-              <li key={s.id} className="flex-none">
-                <button
-                  type="button"
-                  onClick={() => go(s.id)}
-                  aria-current={section === s.id ? "page" : undefined}
-                  className={`flex min-h-[48px] w-full items-center gap-3 whitespace-nowrap rounded-xl px-4 text-left text-[16px] font-semibold transition-colors ${section === s.id ? "bg-gold text-umber" : "text-haze hover:bg-bone/10 hover:text-cream"}`}
-                >
-                  <s.icon aria-hidden className="h-5 w-5 flex-none" /> {t(s.label)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="hidden flex-col gap-2 px-7 pt-6 lg:flex">
-          <Link to="/" className="text-sm font-semibold text-sun hover:underline">← {t("See the site")}</Link>
-          <button type="button" onClick={lock} className="flex items-center gap-2 text-sm font-semibold text-dust hover:text-gold"><LogOut aria-hidden className="h-4 w-4" /> {t("Close the panel")}</button>
-        </div>
-      </aside>
+        </aside>
 
-      <div id="panel-main" className="min-w-0 px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-        <AnimatePresence mode="wait">
-          <motion.div key={section} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            {forms[section]}
-          </motion.div>
-        </AnimatePresence>
+        <div>
+          <AnimatePresence mode="wait">
+            <motion.div key={section} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+              {forms[section]}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

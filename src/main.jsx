@@ -19,6 +19,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { PlayerProvider } from "./lib/player.jsx";
 import { LangProvider } from "./lib/i18n.jsx";
+import { AuthProvider } from "./lib/auth.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -26,9 +27,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         for visitors who ask for less motion (UI/UX Pro Max: reduced-motion) */}
     <MotionConfig reducedMotion="user">
       <LangProvider>
-        <PlayerProvider>
-          <App />
-        </PlayerProvider>
+        <AuthProvider>
+          <PlayerProvider>
+            <App />
+          </PlayerProvider>
+        </AuthProvider>
       </LangProvider>
     </MotionConfig>
   </React.StrictMode>

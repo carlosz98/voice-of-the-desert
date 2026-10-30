@@ -6,6 +6,8 @@ import { Sheet } from "./ui/Sheet.jsx";
 import TopStrip from "./TopStrip.jsx";
 import { Link } from "../lib/router.jsx";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../lib/auth.jsx";
+import { LayoutDashboard } from "lucide-react";
 import { LangToggle, useLang } from "../lib/i18n.jsx";
 
 export function Logo({ className = "" }) {
@@ -23,6 +25,7 @@ export function Logo({ className = "" }) {
 
 export default function Navbar() {
   const { pathname } = useLocation();
+  const { isFelipe } = useAuth();
   // only real pages light up; section links on the home page stay plain
   // only the home page has a photo behind the menu; other pages get a solid bar
   const onHome = pathname === "/";
@@ -79,6 +82,17 @@ export default function Navbar() {
                   </Link>
                 </li>
               ))}
+              {isFelipe && (
+                <li>
+                  <Link
+                    to="/panel"
+                    aria-current={pathname.startsWith("/panel") ? "page" : undefined}
+                    className="ml-2 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-gold px-4 text-[13px] font-bold uppercase tracking-[0.1em] text-umber transition-transform hover:-translate-y-0.5"
+                  >
+                    <LayoutDashboard aria-hidden className="h-4 w-4" /> {t("My panel")}
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
           <LangToggle className="ml-auto lg:ml-0" />
@@ -100,7 +114,7 @@ export default function Navbar() {
       <Sheet open={open} onClose={() => setOpen(false)} title={t("Menu")}>
         <nav aria-label="Mobile">
           <ul className="flex flex-col">
-            {[...NAV, { href: "/subir", label: "Upload" }].map(item => (
+            {[...NAV, { href: "/subir", label: "Upload" }, ...(isFelipe ? [{ href: "/panel", label: "My panel" }] : [])].map(item => (
               <li key={item.href}>
                 <Link
                   to={item.href}

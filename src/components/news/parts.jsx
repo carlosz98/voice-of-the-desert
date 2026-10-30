@@ -4,6 +4,7 @@ import { Camera, Link2, MessageCircle, Mic, Music, NotebookPen, Send } from "luc
 import { DESK, HOST, LEAD_STORY, NEXT_POST } from "../../lib/data.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { Link } from "../../lib/router.jsx";
+import { useAuth } from "../../lib/auth.jsx";
 import { EASE } from "../ui/Reveal.jsx";
 import { SpotlightCard } from "../ui/SpotlightCard.jsx";
 import { NewBadge, isFresh } from "../ui/NewBadge.jsx";
@@ -85,6 +86,7 @@ export function StoryRow({ story, rank }) {
 
 export function Comments({ story, idPrefix = "c" }) {
   const { t } = useLang();
+  const { isFelipe } = useAuth();
   const [extra, setExtra] = useState([]);
   const [draft, setDraft] = useState("");
   const thread = [...(story.thread || []), ...extra];
@@ -92,7 +94,7 @@ export function Comments({ story, idPrefix = "c" }) {
   const post = e => {
     e.preventDefault();
     if (!draft.trim()) return;
-    setExtra(x => [...x, { name: "You", ago: "Just now", text: draft.trim(), mine: true }]);
+    setExtra(x => [...x, { name: isFelipe ? HOST.name : "You", host: isFelipe, ago: "Just now", text: draft.trim(), mine: true }]);
     setDraft("");
   };
 

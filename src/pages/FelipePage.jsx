@@ -4,6 +4,7 @@ import { BookOpen, Check, Mountain, Music, Newspaper, Send } from "lucide-react"
 import { HOST, SLIDES } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
 import Host from "../components/Host.jsx";
+import FelipeSignIn from "../components/FelipeSignIn.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
 import { Reveal } from "../components/ui/Reveal.jsx";
 
@@ -146,6 +147,7 @@ export default function FelipePage() {
             <WriteToFelipe />
           </div>
         </section>
+        <FelipeSignIn />
       </div>
     </>
   );
