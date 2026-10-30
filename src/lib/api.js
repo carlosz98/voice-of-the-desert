@@ -13,6 +13,8 @@
  *          same error messages as the real API.
  * ============================================================ */
 
+import { SAMPLE_SUBMISSIONS } from "./sample-submissions.js";
+
 const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 export const LIVE = Boolean(API_URL);
 
@@ -157,9 +159,117 @@ const demo = {
     if (me.role === "felipe") throw new ApiError("Felipe's account can't be deleted from the website.", 403);
     if (me.hash !== (await hash(password || ""))) throw new ApiError("That password isn't right.", 401);
     saveDemoUsers((await demoUsers()).filter(u => u.id !== me.id));
+    saveDemoSubs(demoSubs().filter(s => s.user_id !== me.id)); // like CASCADE in the database
     return { ok: true };
   },
 };
+
+/* ---------- DEMO submissions ---------- */
+const SUBS_KEY = "votd-demo-submissions";
+const KINDS = ["video", "music", "podcast", "news", "photo"];
+
+function demoSubs() {
+  let list;
+  try { list = JSON.parse(localStorage.getItem(SUBS_KEY)); } catch {}
+  if (!Array.isArray(list)) {
+    const day = 864e5;
+    list = SAMPLE_SUBMISSIONS.map(({ days_ago, ...s }) => ({
+      ...s,
+      created_at: new Date(Date.now() - days_ago * day).toISOString(),
+      reviewed_at: s.status === "pending" ? null : new Date(Date.now() - (days_ago - 1) * day).toISOString(),
+    }));
+    saveDemoSubs(list);
+  }
+  return list;
+}
+function saveDemoSubs(list) {
+  try { localStorage.setItem(SUBS_KEY, JSON.stringify(list)); } catch {}
+}
+async function withSender(s) {
+  const u = (await demoUsers()).find(x => x.id === s.user_id);
+  return { ...s, sender_name: u?.name || "?", sender_email: u?.email || "", sender_town: u?.town || null };
+}
+
+const demoSubmissions = {
+  async mine() {
+    await wait(250);
+    const me = await demoMe();
+    return demoSubs().filter(s => s.user_id === me.id).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  },
+  async all(status) {
+    await wait(250);
+    const me = await demoMe();
+    if (me.role !== "felipe") throw new ApiError("Only Felipe can do this.", 403);
+    const list = demoSubs().filter(s => !status || s.status === status);
+    list.sort((a, b) => (b.status === "pending") - (a.status === "pending") || b.created_at.localeCompare(a.created_at));
+    return Promise.all(list.map(withSender));
+  },
+  async create({ kind, title, description, link, file_name }) {
+    await wait(900);
+    const me = await demoMe();
+    title = (title || "").trim();
+    link = (link || "").trim();
+    if (!title) throw new ApiError("Missing: title", 400);
+    if (!KINDS.includes(kind)) throw new ApiError("Missing: kind", 400);
+    if (link && !/^https?:\/\/\S+\.\S+/i.test(link)) throw new ApiError("That link doesn't look right. It should start with https://", 400);
+    if (!link && !file_name) throw new ApiError("Add a file or a link.", 400);
+    const list = demoSubs();
+    const today = list.filter(s => s.user_id === me.id && Date.now() - new Date(s.created_at) < 864e5).length;
+    if (today >= 10) throw new ApiError("You've sent 10 today. Please try again tomorrow.", 429);
+    const s = {
+      id: Math.max(0, ...list.map(x => x.id)) + 1,
+      user_id: me.id,
+      kind,
+      title,
+      description: (description || "").trim() || null,
+      link: link || null,
+      file_name: file_name || null,
+      status: "pending",
+      felipe_note: null,
+      created_at: new Date().toISOString(),
+      reviewed_at: null,
+    };
+    saveDemoSubs([s, ...list]);
+    return withSender(s);
+  },
+  async review(id, { status, felipe_note }) {
+    await wait(400);
+    const me = await demoMe();
+    if (me.role !== "felipe") throw new ApiError("Only Felipe can do this.", 403);
+    const list = demoSubs();
+    const s = list.find(x => x.id === id);
+    if (!s) throw new ApiError("Submission not found", 404);
+    if (status) s.status = status;
+    if (felipe_note !== undefined) s.felipe_note = felipe_note.trim() || null;
+    s.reviewed_at = s.status === "pending" ? null : new Date().toISOString();
+    saveDemoSubs(list);
+    return withSender(s);
+  },
+  async remove(id) {
+    await wait(300);
+    const me = await demoMe();
+    const list = demoSubs();
+    const s = list.find(x => x.id === id);
+    if (!s) throw new ApiError("Submission not found", 404);
+    if (me.role !== "felipe") {
+      if (s.user_id !== me.id) throw new ApiError("You can only remove your own submissions.", 403);
+      if (s.status !== "pending") throw new ApiError("Felipe already reviewed this one, so it can't be removed.", 409);
+    }
+    saveDemoSubs(list.filter(x => x.id !== id));
+    return { ok: true };
+  },
+};
+
+/* ---------- submissions: what the pages use ---------- */
+export const submissions = LIVE
+  ? {
+      mine: () => call("submissions.php"),
+      all: status => call("submissions.php", { params: status ? { all: 1, status } : { all: 1 } }),
+      create: data => call("submissions.php", { method: "POST", body: data }),
+      review: (id, changes) => call("submissions.php", { method: "PUT", params: { id }, body: changes }),
+      remove: id => call("submissions.php", { method: "DELETE", params: { id } }),
+    }
+  : demoSubmissions;
 
 /* ---------- accounts: what the pages use ---------- */
 export const accounts = LIVE

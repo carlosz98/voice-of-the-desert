@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Eye, EyeOff, LayoutDashboard, LogOut, MessageCircle, Music, PenLine, Trash2, UserRound } from "lucide-react";
+import { Check, Eye, EyeOff, LayoutDashboard, LogOut, MessageCircle, Music, PenLine, Trash2, UploadCloud, UserRound } from "lucide-react";
+import { MySubmissions } from "../components/Submissions.jsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, initials } from "../lib/auth.jsx";
 import { LIVE } from "../lib/api.js";
@@ -480,6 +481,32 @@ function DeleteCard() {
   );
 }
 
+/* What an account lets you do, one tap away */
+function QuickLinks() {
+  const { t } = useLang();
+  const links = [
+    { to: "/subir", icon: UploadCloud, title: "Send something", text: "A video, song, photo or news tip" },
+    { to: "/noticias", icon: MessageCircle, title: "Comment", text: "On the news, videos and the podcast" },
+    { to: "/musica#ded-h", icon: Music, title: "Dedicate a song", text: "To someone you love" },
+    { to: "/felipe#write-h", icon: PenLine, title: "Write to Felipe", text: "He reads every message" },
+  ];
+  return (
+    <ul className="grid grid-cols-1 gap-3 min-[460px]:grid-cols-2 lg:grid-cols-4">
+      {links.map((l, i) => (
+        <motion.li key={l.to} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE, delay: i * 0.05 }}>
+          <Link to={l.to} className="group flex h-full items-center gap-3 rounded-2xl border border-dune bg-cream p-4 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-bark">
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-gold/20 text-ochre transition-colors group-hover:bg-gold group-hover:text-umber"><l.icon aria-hidden className="h-5 w-5" /></span>
+            <span className="flex min-w-0 flex-col">
+              <strong className="text-[16px] text-umber">{t(l.title)}</strong>
+              <span className="text-sm text-bark">{t(l.text)}</span>
+            </span>
+          </Link>
+        </motion.li>
+      ))}
+    </ul>
+  );
+}
+
 function SignedIn({ back }) {
   const { t, lang } = useLang();
   const { user, isFelipe, signOut } = useAuth();
@@ -525,7 +552,11 @@ function SignedIn({ back }) {
         </div>
       </header>
       <div className="paper bg-bone">
-        <div className="container-x grid gap-6 py-12 lg:grid-cols-2">
+        <div className="container-x flex flex-col gap-6 pt-12">
+          <QuickLinks />
+          <MySubmissions />
+        </div>
+        <div className="container-x grid gap-6 py-6 pb-12 lg:grid-cols-2">
           <ProfileCard />
           <div className="flex flex-col gap-6">
             <PasswordCard />

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Heart, ListMusic, Pause, Play, Send, SkipBack, SkipForward } from "lucide-react";
 import { DEDICATIONS, GENRES, HOST, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
+import { useAuth } from "../lib/auth.jsx";
 import { fmt, usePlayer } from "../lib/player.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
@@ -80,7 +81,10 @@ function Dedicate() {
   const { t } = useLang();
   const id = useId();
   const [list, setList] = useState(DEDICATIONS);
-  const [form, setForm] = useState({ name: "", to: "", song: "t1", text: "" });
+  const { user } = useAuth();
+  // signed in: their name is already filled in
+  const blank = { name: user?.name || "", to: "", song: "t1", text: "" };
+  const [form, setForm] = useState(blank);
   const [sent, setSent] = useState(false);
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -88,7 +92,7 @@ function Dedicate() {
     e.preventDefault();
     if (!form.name.trim() || !form.to.trim()) return;
     setList(l => [{ ...form, ago: "Just now", mine: true }, ...l]);
-    setForm({ name: "", to: "", song: "t1", text: "" });
+    setForm(blank);
     setSent(true);
     setTimeout(() => setSent(false), 3500);
   };

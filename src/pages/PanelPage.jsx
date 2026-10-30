@@ -2,8 +2,9 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen, Check, ChevronRight, Clapperboard, Eye, EyeOff, FileText, Home as HomeIcon, ImagePlus, LogOut,
-  MessageCircle, Mic, Music, NotebookPen, Plus, Send, Trash2, Upload, X,
+  Inbox, MessageCircle, Mic, Music, NotebookPen, Plus, Send, Trash2, Upload, X,
 } from "lucide-react";
+import { ReviewDesk, usePendingCount } from "../components/Submissions.jsx";
 import { ALL_STORIES, ALL_VIDEOS, EPISODES, GENRES, HOST, NEWS_FILTERS, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
 import { greetingFor, useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
@@ -16,9 +17,10 @@ import NextEpisode from "../components/NextEpisode.jsx";
 /* ───────────────────────────────────────────────────────────────────────
  * Felipe's panel (/panel).
  *
- * Only Felipe sees it: he signs in with his code at the bottom of his profile
- * page (/felipe) and a "Mi panel" tab appears in the menu (see lib/auth.jsx).
- * DEMO ONLY: there is no server yet, so nothing here is saved anywhere.
+ * Only Felipe sees it: he signs in on /cuenta with his account (role "felipe")
+ * and a "Mi panel" tab appears in the menu (see lib/auth.jsx).
+ * Submissions are real (through lib/api.js); the publish forms are still
+ * demo only until the site is connected to the API.
  * ─────────────────────────────────────────────────────────────────────── */
 const SECTIONS = [
   { id: "home", icon: HomeIcon, label: "Overview" },
@@ -29,6 +31,7 @@ const SECTIONS = [
   { id: "verse", icon: BookOpen, label: "Verse of the day" },
   { id: "note", icon: NotebookPen, label: "Quick note" },
   { id: "comments", icon: MessageCircle, label: "Comments" },
+  { id: "submissions", icon: Inbox, label: "Submissions" },
 ];
 
 const PHOTO_CHOICES = Object.entries(PHOTOS);
@@ -167,7 +170,7 @@ function Editor({ title, intro, form, preview }) {
 
 /* ───────── sections ───────── */
 
-function Overview({ go, recent }) {
+function Overview({ go, recent, pending }) {
   const { t } = useLang();
   const g = greetingFor();
   const stats = [
@@ -188,6 +191,26 @@ function Overview({ go, recent }) {
           <p className="text-lg text-loam">{t("What would you like to share today?")}</p>
         </div>
       </div>
+
+      <AnimatePresence>
+        {pending > 0 && (
+          <motion.button
+            type="button"
+            onClick={() => go("submissions")}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="group flex w-full items-center gap-4 rounded-2xl bg-gold px-5 py-4 text-left text-umber shadow-[0_14px_30px_rgba(212,160,74,0.35)] transition-transform hover:-translate-y-0.5"
+          >
+            <span className="grid h-12 w-12 flex-none place-items-center rounded-full bg-umber text-gold"><Inbox aria-hidden className="h-6 w-6" /></span>
+            <span className="flex-1">
+              <strong className="block text-lg">{pending === 1 ? t("1 submission is waiting for you") : `${pending} ${t("submissions are waiting for you")}`}</strong>
+              <span className="text-[15px]">{t("Videos, songs and news your readers sent.")}</span>
+            </span>
+            <ChevronRight aria-hidden className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(([label, n]) => (
@@ -536,6 +559,7 @@ export default function PanelPage() {
   const { isFelipe, signOut } = useAuth();
   const [section, setSection] = useState("home");
   const [recent, setRecent] = useState([]);
+  const [pending, refreshPending] = usePendingCount();
 
   useEffect(() => {
     document.title = `${t("My panel")} · ${t("Voice of the Desert")}`;
@@ -557,7 +581,7 @@ export default function PanelPage() {
   };
 
   const forms = {
-    home: <Overview go={go} recent={recent} />,
+    home: <Overview go={go} recent={recent} pending={pending} />,
     article: <ArticleForm onPublish={publish} />,
     video: <VideoForm onPublish={publish} />,
     song: <SongForm onPublish={publish} />,
@@ -565,6 +589,7 @@ export default function PanelPage() {
     verse: <VerseForm onPublish={publish} />,
     note: <NoteForm onPublish={publish} />,
     comments: <CommentsDesk />,
+    submissions: <ReviewDesk onChange={refreshPending} />,
   };
 
   return (
@@ -591,6 +616,9 @@ export default function PanelPage() {
                       className={`flex min-h-[48px] w-full items-center gap-3 whitespace-nowrap rounded-xl px-4 text-left text-[16px] font-semibold transition-colors ${section === s.id ? "bg-gold text-umber" : "text-haze hover:bg-bone/10 hover:text-cream"}`}
                     >
                       <s.icon aria-hidden className="h-5 w-5 flex-none" /> {t(s.label)}
+                      {s.id === "submissions" && pending > 0 && (
+                        <span aria-label={`${pending} ${t("waiting")}`} className={`ml-auto grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold ${section === s.id ? "bg-umber text-gold" : "bg-gold text-umber"}`}>{pending}</span>
+                      )}
                     </button>
                   </li>
                 ))}
