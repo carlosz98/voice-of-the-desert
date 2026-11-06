@@ -6,8 +6,8 @@ import { Logo } from "./Navbar.jsx";
 import { Link } from "../lib/router.jsx";
 
 const BASE = import.meta.env.BASE_URL;
-const SUNSET = `${BASE}img/sunset.webp`;
-const RIDGE = `${BASE}img/sunset-ridge-mask.png`;
+const SUNSET = `${BASE}img/desert-sunset.webp`;
+const RIDGE = `${BASE}img/desert-ridge-mask.png`;
 
 const COLUMNS = [
   {
@@ -55,15 +55,15 @@ function Landscape({ progress, reduce, lang }) {
   const photo = {
     backgroundImage: `url(${SUNSET})`,
     backgroundSize: "cover",
-    backgroundPosition: "50% 62%",
+    backgroundPosition: "50% 78%",
   };
   const ridgeMask = {
     WebkitMaskImage: `url(${RIDGE})`,
     maskImage: `url(${RIDGE})`,
     WebkitMaskSize: "cover",
     maskSize: "cover",
-    WebkitMaskPosition: "50% 62%",
-    maskPosition: "50% 62%",
+    WebkitMaskPosition: "50% 78%",
+    maskPosition: "50% 78%",
     WebkitMaskRepeat: "no-repeat",
     maskRepeat: "no-repeat",
   };
@@ -75,7 +75,7 @@ function Landscape({ progress, reduce, lang }) {
 
       {/* slow, warm sun glow breathing behind the clouds */}
       <motion.div
-        className="absolute left-[71%] top-[52%] h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="absolute left-[50%] top-[60%] h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{ background: "radial-gradient(circle, rgba(240,196,99,.45), rgba(240,196,99,0) 62%)" }}
         animate={reduce ? undefined : { opacity: [0.55, 1, 0.55], scale: [0.95, 1.06, 0.95] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
@@ -83,7 +83,7 @@ function Landscape({ progress, reduce, lang }) {
 
       {/* giant wordmark, tucked behind the ridge */}
       <motion.p
-        className="absolute inset-x-0 bottom-[40.5%] select-none md:bottom-[37%] whitespace-nowrap text-center font-display font-semibold leading-none tracking-[-0.04em] text-cream/90"
+        className="absolute inset-x-0 bottom-[30%] select-none md:bottom-[31%] whitespace-nowrap text-center font-display font-semibold leading-none tracking-[-0.04em] text-cream/90"
         style={{ y: wordY, opacity: wordOpacity, fontSize: "clamp(2.6rem, 10.6vw, 11rem)", textShadow: "0 8px 40px rgba(28,20,15,.35)" }}
       >
         {lang === "es" ? (
@@ -196,7 +196,7 @@ export default function Footer() {
         {/* bottom line, over the dark foreground of the photo */}
         <div className="relative flex md:absolute md:inset-x-8 md:bottom-5 flex-wrap items-center justify-between gap-x-6 gap-y-1 text-xs text-dust/90">
           <p>© {new Date().getFullYear()} {t("Voice of the Desert")} · {t("Hosted by Felipe Lerma")}</p>
-          <p className="font-serif text-sm italic text-haze">{t("Sunset over the Sierra Tarahumara · Chihuahua")}</p>
+          <p className="font-serif text-sm italic text-haze">{t("Sunset over the desert")}</p>
         </div>
       </div>
     </footer>

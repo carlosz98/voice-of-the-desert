@@ -340,6 +340,7 @@ const ES = {
   "Verse of the day": "Versículo del día",
   "Listen & watch": "Escuchar y ver",
   Credits: "Créditos",
+  "Sunset over the desert": "Atardecer en el desierto",
   "Tune in": "Sintonízanos",
   "Music, news and good conversation from the heart of Chihuahua.": "Música, noticias y buena plática desde el corazón de Chihuahua.",
 };
