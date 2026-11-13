@@ -337,6 +337,14 @@ const ES = {
   "Hosted by Felipe Lerma": "Presentado por Felipe Lerma",
   "Website designed & built by": "Sitio web diseñado y creado por",
   Portfolio: "Portafolio",
+  Home: "Inicio",
+  "About Felipe": "Acerca de Felipe",
+  "Verse of the day": "Versículo del día",
+  "Listen & watch": "Escuchar y ver",
+  Credits: "Créditos",
+  "Sunset over the desert": "Atardecer en el desierto",
+  "Tune in": "Sintonízanos",
+  "Music, news and good conversation from the heart of Chihuahua.": "Música, noticias y buena plática desde el corazón de Chihuahua.",
 };
 
 // patterns for times and counts ("5h ago", "4 min read", "12K views")
