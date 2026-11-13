@@ -30,12 +30,14 @@ if (method() === 'PUT') {
     if (isset($in['new_password'])) {
         $row = my_row($me['id']);
         if (!password_verify((string)($in['current_password'] ?? ''), $row['password_hash'])) {
+            sleep(1); // slows down guessing, same as login
             fail('Your current password isn\'t right.', 401);
         }
-        if (mb_strlen($in['new_password']) < 8) fail('The new password needs at least 8 characters.');
-        query('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($in['new_password'], PASSWORD_DEFAULT), $me['id']]);
-        // sign out everywhere else, keep this ticket
-        query('DELETE FROM sessions WHERE user_id = ? AND token <> ?', [$me['id'], bearer_token()]);
+        $new = (string)$in['new_password'];               // exactly as typed: never trimmed
+        check_password_rules($new, 'The new password');
+        query('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($new, PASSWORD_DEFAULT), $me['id']]);
+        // sign out everywhere else (a stolen ticket stops working), keep this one
+        query('DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?', [$me['id'], token_hash(bearer_token())]);
     }
 
     // change name / town
@@ -57,6 +59,7 @@ if (method() === 'DELETE') {
     if ($me['role'] === 'felipe') fail('Felipe\'s account can\'t be deleted from the website.', 403);
     $row = my_row($me['id']);
     if (!password_verify((string)(input()['password'] ?? ''), $row['password_hash'])) {
+        sleep(1);
         fail('That password isn\'t right.', 401);
     }
     // CASCADE in the database removes their sessions and comments too

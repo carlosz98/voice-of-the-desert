@@ -155,6 +155,42 @@ check "felipe deletes article" "200" "$(code -X DELETE -H "$H" "$A/articles.php?
 check "its comments are gone" "0" "$($SQL "SELECT COUNT(*) FROM comments WHERE item_type='article' AND item_id=$NEW")"
 check "felipe account can't be deleted" "403" "$(code -X DELETE -H "$H" -H "$J" -d '{"password":"desierto"}' $A/account.php)"
 
+echo "--- security: sign-in, tickets, SQL injection"
+# tickets are stored only as a sha256 hash
+check "raw ticket NOT in database" "0" "$($SQL "SELECT COUNT(*) FROM sessions WHERE token_hash='$U'")"
+check "ticket hash IS in database" "1" "$($SQL "SELECT COUNT(*) FROM sessions WHERE token_hash='$(printf %s "$U" | sha256sum | cut -c1-64)'")"
+# passwords are used exactly as typed (spaces kept), 8 to 72 characters
+r=$(curl -s -X POST -H "$J" -d '{"name":"Espacio","email":"space@example.com","password":"  con espacios  "}' $A/register.php); check "password with spaces registers" '"token":"' "$r"
+check "spaces kept: exact password works" "201" "$(code -X POST -H "$J" -d '{"email":"space@example.com","password":"  con espacios  "}' $A/login.php)"
+check "spaces kept: trimmed one fails" "401" "$(code -X POST -H "$J" -d '{"email":"space@example.com","password":"con espacios"}' $A/login.php)"
+check "73-char password refused" "400" "$(code -X POST -H "$J" -d "{\"name\":\"x\",\"email\":\"long@example.com\",\"password\":\"$(printf 'a%.0s' {1..73})\"}" $A/register.php)"
+check "72-char password ok" "201" "$(code -X POST -H "$J" -d "{\"name\":\"x\",\"email\":\"long72@example.com\",\"password\":\"$(printf 'a%.0s' {1..72})\"}" $A/register.php)"
+# 5 wrong passwords lock the email for 15 minutes, even for the right password
+curl -s -o /dev/null -X POST -H "$J" -d '{"name":"Lock","email":"lock@example.com","password":"correcta123"}' $A/register.php
+for i in 1 2 3 4 5; do code -X POST -H "$J" -d '{"email":"lock@example.com","password":"wrong-guess"}' $A/login.php >/dev/null; done
+check "6th try is locked (429)" "429" "$(code -X POST -H "$J" -d '{"email":"lock@example.com","password":"wrong-guess"}' $A/login.php)"
+check "locked even with right password" "429" "$(code -X POST -H "$J" -d '{"email":"lock@example.com","password":"correcta123"}' $A/login.php)"
+check "other accounts not locked" "201" "$(code -X POST -H "$J" -d '{"email":"rosa@example.com","password":"demo1234"}' $A/login.php)"
+$SQL "DELETE FROM login_attempts WHERE email='lock@example.com'" >/dev/null
+check "after the lock ends, right password works" "201" "$(code -X POST -H "$J" -d '{"email":"lock@example.com","password":"correcta123"}' $A/login.php)"
+# SQL injection attempts are treated as plain text
+check "inject login email ' OR '1'='1" "401" "$(code -X POST -H "$J" -d "{\"email\":\"' OR '1'='1\",\"password\":\"x\"}" $A/login.php)"
+check "inject login email felipe' --" "401" "$(code -X POST -H "$J" -d "{\"email\":\"felipe@example.com' -- \",\"password\":\"x\"}" $A/login.php)"
+check "inject slug" "404" "$(code "$A/articles.php?slug=x%27%20OR%20%271%27%3D%271")"
+r=$(curl -s "$A/articles.php?q=%25%27%20UNION%20SELECT%20password_hash%20FROM%20users%20--%20"); check "UNION attack leaks no hash" "0" "$(echo "$r" | grep -c '\$2y\$')"
+r=$(curl -s -X POST -H "$UH" -H "$J" -d "{\"type\":\"article\",\"id\":1,\"text\":\"'); DROP TABLE users; --\"}" $A/comments.php)
+check "DROP TABLE saved as plain text" "DROP TABLE users" "$r"
+check "users table still there" "1" "$($SQL "SELECT COUNT(*) > 0 FROM users")"
+check "inject submissions status filter" "403" "$(code -H "$UH" "$A/submissions.php?all=1&status=%27%20OR%201%3D1%20--")"
+# nothing ever sends a password hash
+r="$(curl -s -H "$UH" $A/login.php)$(curl -s -H "$UH" $A/account.php)$(curl -s $A/articles.php?slug=caballos-salvajes)"
+check "no password_hash in answers" "0" "$(echo "$r" | grep -c 'password_hash\|\$2y\$')"
+# security headers
+hdr=$(curl -s -I $A/articles.php | tr A-Z a-z)
+check "header nosniff" "x-content-type-options: nosniff" "$hdr"
+check "header no-store" "cache-control: no-store" "$hdr"
+check "header frame deny" "x-frame-options: deny" "$hdr"
+
 echo "--- CORS"
 check "CORS github.io" "access-control-allow-origin: https://carlosz98.github.io" "$(curl -s -I -H 'Origin: https://carlosz98.github.io' $A/articles.php | tr A-Z a-z)"
 check "CORS other site blocked" "0" "$(curl -s -I -H 'Origin: https://evil.example' $A/articles.php | grep -ci allow-origin)"

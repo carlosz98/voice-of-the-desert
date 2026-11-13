@@ -148,4 +148,9 @@ export const ACCOUNT_ES = {
   "The library in Delicias is opening on Sundays": "La biblioteca de Delicias abrirá los domingos",
   "Starting next month, with story time for kids at 11.": "Desde el próximo mes, con cuentos para niños a las 11.",
   "Thank you, Rosa. I'll share it this week with a few words.": "Gracias, Rosa. La comparto esta semana con unas palabras.",
+
+  // sign-in safety
+  "Too many wrong tries. For your safety, wait 15 minutes and try again.": "Demasiados intentos equivocados. Por su seguridad, espere 15 minutos e intente de nuevo.",
+  "The password can be at most 72 characters.": "La contraseña puede tener como máximo 72 caracteres.",
+  "The new password can be at most 72 characters.": "La contraseña nueva puede tener como máximo 72 caracteres.",
 };

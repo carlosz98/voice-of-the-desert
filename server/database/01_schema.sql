@@ -11,6 +11,7 @@
 --  One table for each thing on the site:
 --    users        → everyone with an account (Felipe too, as role 'felipe')
 --    sessions     → keeps people signed in after they log in
+--    login_attempts → wrong passwords, to lock out password guessing
 --    articles     → the news stories + Felipe's take on each
 --    videos       → the videos page
 --    songs        → the music page
@@ -30,7 +31,7 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;            -- read this file as utf8 too (for the ñ in Norteño)
 
 -- Start clean every time this file runs (children first, because of the links)
-DROP TABLE IF EXISTS submissions, sessions, admin_tokens, dedications, comments, messages, desk_notes,
+DROP TABLE IF EXISTS login_attempts, submissions, sessions, admin_tokens, dedications, comments, messages, desk_notes,
                      episodes, songs, videos, articles, users, admins;
 
 
@@ -60,13 +61,31 @@ CREATE TABLE users (
 -- every request, so they don't type their password each time.
 -- Tickets expire after 30 days (7 for Felipe).
 -- If the user is deleted, their tickets go too (CASCADE).
+--
+-- We store a HASH of the ticket (sha256), never the ticket
+-- itself, same idea as passwords: if someone ever copied this
+-- table, the hashes can't be used to sign in as anybody.
 -- ------------------------------------------------------------
 CREATE TABLE sessions (
-  token      CHAR(64)  PRIMARY KEY,
+  token_hash CHAR(64)  PRIMARY KEY,           -- sha256 of the ticket
   user_id    INT       NOT NULL,
   expires_at DATETIME  NOT NULL,
   created_at DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- ------------------------------------------------------------
+-- login_attempts: every WRONG password is written here.
+-- 5 wrong tries for the same email in 15 minutes = that email
+-- is locked for 15 minutes, so a program can't keep guessing
+-- someone's password. A correct sign-in clears the list.
+-- ------------------------------------------------------------
+CREATE TABLE login_attempts (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  email      VARCHAR(150) NOT NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX (email, created_at)
 );
 
 

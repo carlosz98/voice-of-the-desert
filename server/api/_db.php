@@ -25,6 +25,17 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Content-Type: application/json; charset=utf-8');
 
+/* Security headers on every answer:
+ *   nosniff      → the browser treats our answer only as JSON, never as a script
+ *   DENY         → nobody can put the API inside a hidden frame on another site
+ *   no-referrer  → our addresses aren't leaked to other sites
+ *   no-store     → answers with personal data (your account, Felipe's messages)
+ *                  are never saved in a browser or proxy cache */
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: no-referrer');
+header('Cache-Control: no-store');
+
 // the browser "asks first" with OPTIONS before a POST; just say yes
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -150,9 +161,14 @@ function slugify(string $text): string
 }
 
 // INSERT (no $id) or UPDATE (with $id) using only the allowed columns.
-// The column names come from OUR list, never from the visitor.
+// The column names come from OUR list, never from the visitor, and the
+// VALUES always travel separately as :placeholders (no SQL injection).
 function save(string $table, array $columns, array $data, ?int $id = null): int
 {
+    // second lock: a table or column name can only be plain lowercase letters and _
+    foreach (array_merge([$table], $columns) as $name) {
+        if (!preg_match('/^[a-z_]+$/', $name)) throw new LogicException("Bad SQL name: $name");
+    }
     $values = array_intersect_key($data, array_flip($columns));
     if (!$values) fail('Nothing to save');
 
@@ -186,6 +202,13 @@ function bearer_token(): ?string
     return preg_match('/^Bearer\s+([a-f0-9]{64})$/', $header, $m) ? $m[1] : null;
 }
 
+// The database only keeps a sha256 HASH of each ticket (see 01_schema.sql),
+// so a copy of the sessions table can't be used to sign in as anyone.
+function token_hash(string $token): string
+{
+    return hash('sha256', $token);
+}
+
 function current_user(): ?array
 {
     static $checked = false, $user = null;
@@ -198,10 +221,19 @@ function current_user(): ?array
     $user = query(
         'SELECT u.id, u.name, u.email, u.role, u.town, u.created_at
            FROM sessions s JOIN users u ON u.id = s.user_id
-          WHERE s.token = ? AND s.expires_at > UTC_TIMESTAMP()',
-        [$token]
+          WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()',
+        [token_hash($token)]
     )->fetch() ?: null;
     return $user;
+}
+
+// Passwords: 8 to 72 characters. bcrypt (what password_hash() uses)
+// only looks at the first 72 bytes, so longer ones are refused instead
+// of being quietly cut.
+function check_password_rules(string $password, string $which = 'The password'): void
+{
+    if (mb_strlen($password) < 8) fail("$which needs at least 8 characters.");
+    if (strlen($password) > 72)   fail("$which can be at most 72 characters.");
 }
 
 function felipe(): ?array
@@ -228,7 +260,8 @@ function start_session(array $user): void
 {
     $token = bin2hex(random_bytes(32));
     $days  = $user['role'] === 'felipe' ? 7 : 30;   // Felipe's ticket expires sooner (it can do more)
-    query("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, UTC_TIMESTAMP() + INTERVAL $days DAY)", [$token, $user['id']]);
+    // the browser gets the ticket; the database only gets its hash
+    query('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, UTC_TIMESTAMP() + INTERVAL ? DAY)', [token_hash($token), $user['id'], $days]);
     query('UPDATE users SET last_login_at = UTC_TIMESTAMP() WHERE id = ?', [$user['id']]);
     query('DELETE FROM sessions WHERE expires_at < UTC_TIMESTAMP()'); // tidy up old tickets
 

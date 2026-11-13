@@ -113,6 +113,7 @@ const demo = {
     if (!name) throw new ApiError("Missing: name", 400);
     if (!validEmail(email)) throw new ApiError("That email doesn't look right.", 400);
     if ((password || "").length < 8) throw new ApiError("The password needs at least 8 characters.", 400);
+    if (new TextEncoder().encode(password).length > 72) throw new ApiError("The password can be at most 72 characters.", 400);
     const users = await demoUsers();
     if (users.some(u => u.email === email)) throw new ApiError("There is already an account with that email. Try signing in.", 409);
     const user = { id: Math.max(...users.map(u => u.id)) + 1, name, email, role: "user", town: (town || "").trim() || null, hash: await hash(password), created_at: new Date().toISOString() };
@@ -142,6 +143,7 @@ const demo = {
     if (changes.new_password !== undefined) {
       if (u.hash !== (await hash(changes.current_password || ""))) throw new ApiError("Your current password isn't right.", 401);
       if (changes.new_password.length < 8) throw new ApiError("The new password needs at least 8 characters.", 400);
+      if (new TextEncoder().encode(changes.new_password).length > 72) throw new ApiError("The new password can be at most 72 characters.", 400);
       u.hash = await hash(changes.new_password);
     }
     if (changes.name !== undefined) {

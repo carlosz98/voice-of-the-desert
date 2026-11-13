@@ -43,6 +43,7 @@ function PasswordInput({ value, onChange, autoComplete, invalid, id }) {
         type={show ? "text" : "password"}
         required
         minLength={autoComplete === "new-password" ? 8 : undefined}
+        maxLength={autoComplete === "new-password" ? 72 : 200}
         autoComplete={autoComplete}
         value={value}
         onChange={e => onChange(e.target.value)}
