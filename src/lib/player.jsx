@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { TRACKS } from "./data.js";
+import { useContent, writes } from "./content.jsx";
 import { tuneIn } from "./radio.js";
 
 /* One music player for the whole page: the hero "Now playing" card,
@@ -9,10 +9,11 @@ import { tuneIn } from "./radio.js";
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
+  const { tracks: TRACKS = [], live } = useContent(); // sample songs, or MySQL through PHP
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(52);
-  const track = TRACKS[index];
+  const track = TRACKS[index] || TRACKS[0];
 
   useEffect(() => {
     if (!playing) return;
@@ -33,9 +34,11 @@ export function PlayerProvider({ children }) {
     setIndex(i);
     setTime(0);
     setPlaying(true);
-  }, []);
-  const next = useCallback(() => select((index + 1) % TRACKS.length), [index, select]);
-  const prev = useCallback(() => select((index - 1 + TRACKS.length) % TRACKS.length), [index, select]);
+    // LIVE: count one play in the database (songs.php?play=1)
+    if (live && TRACKS[i]?.dbId) writes.play(TRACKS[i].dbId).catch(() => {});
+  }, [live, TRACKS]);
+  const next = useCallback(() => select((index + 1) % TRACKS.length), [index, select, TRACKS.length]);
+  const prev = useCallback(() => select((index - 1 + TRACKS.length) % TRACKS.length), [index, select, TRACKS.length]);
   const toggle = useCallback(() => {
     if (!playing) tuneIn();
     setPlaying(p => !p);
@@ -43,7 +46,7 @@ export function PlayerProvider({ children }) {
 
   const value = useMemo(
     () => ({ tracks: TRACKS, index, track, playing, time, progress: time / track.length, select, next, prev, toggle }),
-    [index, track, playing, time, select, next, prev, toggle]
+    [TRACKS, index, track, playing, time, select, next, prev, toggle]
   );
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }

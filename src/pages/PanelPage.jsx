@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { ReviewDesk, usePendingCount } from "../components/Submissions.jsx";
 import { ALL_STORIES, ALL_VIDEOS, EPISODES, GENRES, HOST, NEWS_FILTERS, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
+import { agoFrom, useContent, writes } from "../lib/content.jsx";
 import { greetingFor, useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { useAuth } from "../lib/auth.jsx";
@@ -35,6 +36,22 @@ const SECTIONS = [
 ];
 
 const PHOTO_CHOICES = Object.entries(PHOTOS);
+
+/* LIVE helpers */
+// "/voice-of-the-desert/img/sunset.webp" → "img/sunset.webp" (what the database keeps).
+// A photo picked from the computer can't be saved until Cloud Storage is set up.
+const photoForDb = p => (!p || p.startsWith("blob:") ? null : p.startsWith(import.meta.env.BASE_URL) ? p.slice(import.meta.env.BASE_URL.length) : p);
+// the length of an audio file, read in the browser (seconds), or null
+const durationOf = file =>
+  new Promise(resolve => {
+    if (!file) return resolve(null);
+    const a = document.createElement("audio");
+    a.preload = "metadata";
+    a.onloadedmetadata = () => resolve(Math.round(a.duration) || null);
+    a.onerror = () => resolve(null);
+    a.src = URL.createObjectURL(file);
+  });
+const paragraphs = text => text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
 
 /* ───────── small building blocks (big and clear, for easy use) ───────── */
 
@@ -118,28 +135,46 @@ function FileDrop({ label, accept, hint, file, onFile }) {
 /* the two buttons at the bottom of every form, plus the "it worked" message */
 function Actions({ onPublish, ready, publishLabel = "Publish", needs = "Fill in the title to publish." }) {
   const { t } = useLang();
-  const [state, setState] = useState(null); // "draft" | "published"
-  const go = kind => {
-    if (kind === "published") onPublish();
+  const { live } = useContent();
+  const [state, setState] = useState(null); // "draft" | "published" | "saved"
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const go = async kind => {
+    setError("");
+    if (kind === "published") {
+      setBusy(true);
+      try {
+        // LIVE: onPublish saves it in MySQL and answers "saved"
+        const result = await onPublish();
+        kind = result === "saved" ? "saved" : "published";
+      } catch (err) {
+        setBusy(false);
+        return setError(err.message);
+      }
+      setBusy(false);
+    }
     setState(kind);
-    setTimeout(() => setState(null), 3500);
+    setTimeout(() => setState(null), 4000);
   };
   return (
     <div className="flex flex-col gap-3 sm:col-span-2">
       <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={() => go("published")} disabled={!ready} className="pill-gold min-h-[56px] px-8 text-[17px] disabled:cursor-not-allowed disabled:opacity-50">
-          <Send aria-hidden className="h-5 w-5" /> {t(publishLabel)}
+        <button type="button" onClick={() => go("published")} disabled={!ready || busy} className="pill-gold min-h-[56px] px-8 text-[17px] disabled:cursor-not-allowed disabled:opacity-50">
+          <Send aria-hidden className="h-5 w-5" /> {t(busy ? "Publishing…" : publishLabel)}
         </button>
-        <button type="button" onClick={() => go("draft")} className="pill border border-dune bg-cream min-h-[56px] px-6 text-[17px] font-semibold hover:border-umber">
-          {t("Save draft")}
-        </button>
+        {!live && (
+          <button type="button" onClick={() => go("draft")} className="pill border border-dune bg-cream min-h-[56px] px-6 text-[17px] font-semibold hover:border-umber">
+            {t("Save draft")}
+          </button>
+        )}
       </div>
       {!ready && <p className="text-sm text-bark">{t(needs)}</p>}
+      {error && <p role="alert" className="rounded-xl bg-[#9A3412]/10 px-4 py-3 font-semibold text-[#9A3412]">{t(error)}</p>}
       <AnimatePresence>
         {state && (
           <motion.p role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 rounded-xl bg-[#2B6B3F] px-4 py-3 font-semibold text-cream">
             <Check aria-hidden className="h-5 w-5" />
-            {state === "published" ? t("Published! (Demo: nothing is saved yet.)") : t("Draft saved. (Demo: nothing is saved yet.)")}
+            {state === "saved" ? t("Published! It's on the site now.") : state === "published" ? t("Published! (Demo: nothing is saved yet.)") : t("Draft saved. (Demo: nothing is saved yet.)")}
           </motion.p>
         )}
       </AnimatePresence>
@@ -173,14 +208,26 @@ function Editor({ title, intro, form, preview }) {
 function Overview({ go, recent, pending }) {
   const { t } = useLang();
   const g = greetingFor();
-  const stats = [
-    ["Visits this week", "1,284"],
-    ["New comments", "47"],
-    ["Song dedications", "6"],
-    ["People on the letter", "312"],
-  ];
+  const content = useContent();
+  const [recentComments] = useRecentComments();
+  // LIVE: real counts from the database. DEMO: sample numbers.
+  const stats = content.live
+    ? [
+        ["Stories", String(content.stories.length)],
+        ["Videos", String(content.videos.length)],
+        ["Songs", String(content.tracks.length)],
+        ["Song dedications", String(content.dedications.length)],
+      ]
+    : [
+        ["Visits this week", "1,284"],
+        ["New comments", "47"],
+        ["Song dedications", "6"],
+        ["People on the letter", "312"],
+      ];
   const quick = SECTIONS.slice(1, 7);
-  const toAnswer = ALL_STORIES.flatMap(s => (s.thread || []).filter(c => !c.host).map(c => ({ ...c, story: s }))).slice(0, 3);
+  const toAnswer = content.live
+    ? (recentComments || []).slice(0, 3)
+    : ALL_STORIES.flatMap(s => (s.thread || []).filter(c => !c.host).map(c => ({ ...c, where: s.title }))).slice(0, 3);
 
   return (
     <div className="flex flex-col gap-8">
@@ -220,7 +267,7 @@ function Overview({ go, recent, pending }) {
           </li>
         ))}
       </ul>
-      <p className="-mt-5 text-sm text-bark">{t("Sample numbers for the demo.")}</p>
+      {!content.live && <p className="-mt-5 text-sm text-bark">{t("Sample numbers for the demo.")}</p>}
 
       <section className="flex flex-col gap-3">
         <h2 className="font-display text-2xl font-semibold">{t("Share something new")}</h2>
@@ -246,7 +293,7 @@ function Overview({ go, recent, pending }) {
           <ul className="flex flex-col divide-y divide-dune">
             {toAnswer.map((c, i) => (
               <li key={i} className="py-3">
-                <p className="text-sm text-bark"><strong className="text-umber">{c.name}</strong> · {t(c.story.title)}</p>
+                <p className="text-sm text-bark"><strong className="text-umber">{c.name}</strong> · {t(c.where)}</p>
                 <p className="mt-1 font-serif text-lg italic leading-snug">“{t(c.text)}”</p>
               </li>
             ))}
@@ -305,7 +352,29 @@ function ArticleForm({ onPublish }) {
             <textarea rows={4} className={`${area} border-gold/60 bg-[#FFF8E9] font-serif text-[20px] italic`} value={f.take} onChange={set("take")} placeholder={t("What do you think about this story?")} />
           </Field>
           <div className="sm:col-span-2"><PhotoPicker value={f.photo} onChange={set("photo")} /></div>
-          <Actions ready={!!f.title.trim()} onPublish={() => onPublish({ kind: "Write news", title: f.title })} />
+          <Actions
+            ready={!!f.title.trim()}
+            onPublish={() =>
+              onPublish({
+                kind: "Write news",
+                title: f.title,
+                save: () => {
+                  const body = paragraphs(f.body);
+                  const words = [f.summary, f.body, f.take].join(" ").split(/\s+/).length;
+                  return writes.addArticle({
+                    category: f.category,
+                    title: f.title.trim(),
+                    summary: f.summary.trim() || f.title.trim(),
+                    body: body.length ? body : [f.summary.trim() || f.title.trim()],
+                    source: isNews ? f.source.trim() || null : HOST.name,
+                    take: f.take.trim() || null,
+                    photo: photoForDb(f.photo),
+                    read_minutes: Math.max(1, Math.round(words / 200)),
+                  });
+                },
+              })
+            }
+          />
         </>
       }
       preview={<div className="max-w-[420px]"><StoryCard story={preview} /></div>}
@@ -329,7 +398,16 @@ function VideoForm({ onPublish }) {
           <Field label={t("Description")}><textarea rows={3} className={area} value={f.description} onChange={set("description")} /></Field>
           <Field label={t("Your note")}><textarea rows={3} className={`${area} border-gold/60 bg-[#FFF8E9] font-serif text-[20px] italic`} value={f.note} onChange={set("note")} placeholder={t("Why are you sharing this video?")} /></Field>
           <div className="sm:col-span-2"><PhotoPicker value={f.photo} onChange={set("photo")} /></div>
-          <Actions ready={!!f.title.trim()} onPublish={() => onPublish({ kind: "Upload video", title: f.title })} />
+          <Actions
+            ready={!!f.title.trim()}
+            onPublish={() =>
+              onPublish({
+                kind: "Upload video",
+                title: f.title,
+                save: () => writes.addVideo({ title: f.title.trim(), description: f.description.trim() || null, note: f.note.trim() || null, photo: photoForDb(f.photo), from_who: "felipe" }),
+              })
+            }
+          />
         </>
       }
       preview={
@@ -369,7 +447,24 @@ function SongForm({ onPublish }) {
             </div>
           </div>
           <div className="sm:col-span-2"><PhotoPicker value={f.photo} onChange={set("photo")} /></div>
-          <Actions ready={!!f.title.trim()} onPublish={() => onPublish({ kind: "Upload song", title: f.title })} />
+          <Actions
+            ready={!!f.title.trim()}
+            onPublish={() =>
+              onPublish({
+                kind: "Upload song",
+                title: f.title,
+                save: async () =>
+                  writes.addSong({
+                    title: f.title.trim(),
+                    artist: f.artist.trim() || HOST.name,
+                    album: f.album.trim() || null,
+                    genre: f.genre,
+                    length_seconds: (await durationOf(f.file)) || 180,
+                    photo: photoForDb(f.photo),
+                  }),
+              })
+            }
+          />
         </>
       }
       preview={
@@ -389,7 +484,8 @@ function SongForm({ onPublish }) {
 
 function PodcastForm({ onPublish }) {
   const { t } = useLang();
-  const number = EPISODES[0].number + 1;
+  const { episodes = EPISODES } = useContent();
+  const number = (episodes[0]?.number || 0) + 1; // the next episode number
   const [f, setF] = useState({ title: "", guest: "", role: "", summary: "", note: "", photo: PHOTOS.sunset, file: null });
   const [chapters, setChapters] = useState([["0:00", t("Welcome")], ["", ""]]);
   const set = k => e => setF(x => ({ ...x, [k]: e?.target ? e.target.value : e }));
@@ -418,7 +514,25 @@ function PodcastForm({ onPublish }) {
           </div>
           <Field label={t("Your note")}><textarea rows={3} className={`${area} border-gold/60 bg-[#FFF8E9] font-serif text-[20px] italic`} value={f.note} onChange={set("note")} /></Field>
           <div className="sm:col-span-2"><PhotoPicker value={f.photo} onChange={set("photo")} /></div>
-          <Actions ready={!!f.title.trim()} onPublish={() => onPublish({ kind: "Podcast episode", title: f.title })} />
+          <Actions
+            ready={!!f.title.trim()}
+            onPublish={() =>
+              onPublish({
+                kind: "Podcast episode",
+                title: f.title,
+                save: () =>
+                  writes.addEpisode({
+                    title: f.title.trim(),
+                    guest: f.guest.trim() || null,
+                    guest_role: f.role.trim() || null,
+                    summary: f.summary.trim() || null,
+                    note: f.note.trim() || null,
+                    chapters: chapters.filter(c => c[0].trim() && c[1].trim()),
+                    photo: photoForDb(f.photo),
+                  }),
+              })
+            }
+          />
         </>
       }
       preview={
@@ -488,7 +602,11 @@ function NoteForm({ onPublish }) {
           <Field label={t("Your note")}><textarea rows={5} className={`${area} font-serif text-[20px] italic`} value={text} onChange={e => setText(e.target.value)} placeholder={t("Good morning to everyone. Today…")} /></Field>
           <div className="sm:col-span-2"><PhotoPicker value={photo} onChange={setPhoto} /></div>
           {photo && <button type="button" onClick={() => setPhoto(null)} className="flex w-fit items-center gap-1.5 text-sm font-semibold text-bark hover:text-umber"><X aria-hidden className="h-4 w-4" /> {t("No photo")}</button>}
-          <Actions ready={!!text.trim()} onPublish={() => onPublish({ kind: "Quick note", title: text.slice(0, 60) })} needs="Write your note to publish." />
+          <Actions
+            ready={!!text.trim()}
+            onPublish={() => onPublish({ kind: "Quick note", title: text.slice(0, 60), save: () => writes.addDesk({ text: text.trim(), kind: photo ? "photo" : "note", photo: photoForDb(photo) }) })}
+            needs="Write your note to publish."
+          />
         </>
       }
       preview={
@@ -505,21 +623,76 @@ function NoteForm({ onPublish }) {
   );
 }
 
+/* LIVE: the latest comments from readers (comments.php?recent=1), or null while loading */
+function useRecentComments() {
+  const { live } = useContent();
+  const [list, setList] = useState(live ? null : []);
+  useEffect(() => {
+    if (!live) return;
+    writes
+      .recentComments()
+      .then(rows => setList(rows.map(c => ({ ...c, ago: agoFrom(c.created_at), where: c.item_title, key: c.id }))))
+      .catch(() => setList([]));
+  }, [live]);
+  return [list, setList];
+}
+
 function CommentsDesk() {
   const { t } = useLang();
-  const all = useMemo(
+  const { live } = useContent();
+  const [liveList, setLiveList] = useRecentComments();
+  const sample = useMemo(
     () => [...ALL_STORIES, ...ALL_VIDEOS, ...EPISODES].flatMap(item => (item.thread || []).filter(c => !c.host).map((c, i) => ({ ...c, where: item.title, key: `${item.id}-${i}` }))),
     []
   );
+  const all = live ? liveList || [] : sample;
   const [replies, setReplies] = useState({});
   const [drafts, setDrafts] = useState({});
   const [hidden, setHidden] = useState({});
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+
+  // LIVE: Felipe's answer is a real comment on the same story/video/episode
+  const answer = async c => {
+    const text = drafts[c.key]?.trim();
+    if (!text) return;
+    setError("");
+    if (live) {
+      setBusy(c.key);
+      try {
+        await writes.comment(c.item_type, c.item_id, text);
+      } catch (err) {
+        setBusy("");
+        return setError(err.message);
+      }
+      setBusy("");
+    }
+    setReplies(r => ({ ...r, [c.key]: text }));
+  };
+
+  // LIVE: hiding deletes the comment from the site (Felipe can delete any)
+  const hide = async c => {
+    setError("");
+    if (live) {
+      try {
+        await writes.deleteComment(c.id);
+      } catch (err) {
+        return setError(err.message);
+      }
+      return setLiveList(l => l.filter(x => x.id !== c.id));
+    }
+    setHidden(h => ({ ...h, [c.key]: !h[c.key] }));
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="h-display text-[clamp(28px,3.4vw,42px)]">{t("Comments")}</h1>
-        <p className="mt-1 text-lg text-loam">{t("Answer your readers, or hide a comment that doesn't belong.")}</p>
+        <p className="mt-1 text-lg text-loam">{t(live ? "Answer your readers, or remove a comment that doesn't belong." : "Answer your readers, or hide a comment that doesn't belong.")}</p>
       </div>
+      {error && <p role="alert" className="rounded-xl bg-[#9A3412]/10 px-4 py-3 font-semibold text-[#9A3412]">{t(error)}</p>}
+      {live && liveList === null && <p className="text-loam">{t("One moment…")}</p>}
+      {live && liveList?.length === 0 && <p className="text-loam">{t("No comments from readers yet.")}</p>}
       <ul className="flex flex-col gap-4">
         {all.map(c => (
           <li key={c.key} className={`rounded-[20px] bg-bone p-5 ring-1 ring-dune transition-opacity ${hidden[c.key] ? "opacity-50" : ""}`}>
@@ -532,22 +705,23 @@ function CommentsDesk() {
                 <input
                   aria-label={t("Your answer")}
                   value={drafts[c.key] || ""}
+                  maxLength={2000}
                   onChange={e => setDrafts(d => ({ ...d, [c.key]: e.target.value }))}
                   placeholder={t("Write your answer…")}
                   className={`${input} min-w-0 flex-[1_1_240px]`}
                 />
-                <button type="button" disabled={!drafts[c.key]?.trim()} onClick={() => setReplies(r => ({ ...r, [c.key]: drafts[c.key] }))} className="pill-dark min-h-[48px] disabled:opacity-50">
+                <button type="button" disabled={!drafts[c.key]?.trim() || busy === c.key} onClick={() => answer(c)} className="pill-dark min-h-[48px] disabled:opacity-50">
                   <Send aria-hidden className="h-4 w-4" /> {t("Answer")}
                 </button>
-                <button type="button" onClick={() => setHidden(h => ({ ...h, [c.key]: !h[c.key] }))} className="pill border border-dune min-h-[48px] font-semibold hover:border-umber">
-                  {hidden[c.key] ? <Eye aria-hidden className="h-4 w-4" /> : <EyeOff aria-hidden className="h-4 w-4" />} {t(hidden[c.key] ? "Show" : "Hide")}
+                <button type="button" onClick={() => hide(c)} className="pill border border-dune min-h-[48px] font-semibold hover:border-umber">
+                  {live ? <Trash2 aria-hidden className="h-4 w-4" /> : hidden[c.key] ? <Eye aria-hidden className="h-4 w-4" /> : <EyeOff aria-hidden className="h-4 w-4" />} {t(live ? "Remove" : hidden[c.key] ? "Show" : "Hide")}
                 </button>
               </div>
             )}
           </li>
         ))}
       </ul>
-      <p className="text-sm text-bark">{t("Demo: answers and hidden comments stay on this page only.")}</p>
+      {!live && <p className="text-sm text-bark">{t("Demo: answers and hidden comments stay on this page only.")}</p>}
     </div>
   );
 }
@@ -560,6 +734,7 @@ export default function PanelPage() {
   const [section, setSection] = useState("home");
   const [recent, setRecent] = useState([]);
   const [pending, refreshPending] = usePendingCount();
+  const { live, reload } = useContent();
 
   useEffect(() => {
     document.title = `${t("My panel")} · ${t("Voice of the Desert")}`;
@@ -574,7 +749,18 @@ export default function PanelPage() {
   // only for Felipe: anyone else is sent to the sign-in page
   if (!isFelipe) return <Navigate to={`/cuenta?volver=${encodeURIComponent("/panel")}`} replace />;
 
-  const publish = item => setRecent(r => [item, ...r].slice(0, 6));
+  // LIVE: save it in MySQL, then reload the site's content so it shows everywhere.
+  // DEMO: only listed under "Published recently".
+  const publish = async ({ save, ...item }) => {
+    let result;
+    if (live && save) {
+      await save(); // an error here shows under the Publish button
+      await reload();
+      result = "saved";
+    }
+    setRecent(r => [item, ...r].slice(0, 6));
+    return result;
+  };
   const go = id => {
     setSection(id);
     window.scrollTo({ top: 0, behavior: "smooth" });

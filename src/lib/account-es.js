@@ -153,4 +153,13 @@ export const ACCOUNT_ES = {
   "Too many wrong tries. For your safety, wait 15 minutes and try again.": "Demasiados intentos equivocados. Por su seguridad, espere 15 minutos e intente de nuevo.",
   "The password can be at most 72 characters.": "La contraseña puede tener como máximo 72 caracteres.",
   "The new password can be at most 72 characters.": "La contraseña nueva puede tener como máximo 72 caracteres.",
+
+  // live content (from the database)
+  "We couldn't load this right now.": "No pudimos cargar esto ahora.",
+  "Publishing…": "Publicando…",
+  "Published! It's on the site now.": "¡Publicado! Ya está en el sitio.",
+  Stories: "Historias",
+  Songs: "Canciones",
+  "Answer your readers, or remove a comment that doesn't belong.": "Responda a sus lectores, o quite un comentario que no corresponde.",
+  "No comments from readers yet.": "Todavía no hay comentarios de lectores.",
 };

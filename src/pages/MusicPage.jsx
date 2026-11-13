@@ -1,7 +1,8 @@
 import { useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Heart, ListMusic, Pause, Play, Send, SkipBack, SkipForward } from "lucide-react";
-import { DEDICATIONS, GENRES, HOST, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
+import { GENRES, HOST, PHOTOS, PLAYLISTS } from "../lib/data.js";
+import { useContent, writes } from "../lib/content.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { fmt, usePlayer } from "../lib/player.jsx";
@@ -11,7 +12,6 @@ import { EASE, Reveal } from "../components/ui/Reveal.jsx";
 import { NewBadge } from "../components/ui/NewBadge.jsx";
 import { DuneWave } from "../components/Listen.jsx";
 
-const trackIndex = id => TRACKS.findIndex(t => t.id === id);
 const playsNum = p => parseFloat(p) * (p.endsWith("K") ? 1000 : 1);
 
 /* little bars that dance next to the song that's playing */
@@ -80,18 +80,36 @@ function NowPlaying() {
 function Dedicate() {
   const { t } = useLang();
   const id = useId();
-  const [list, setList] = useState(DEDICATIONS);
+  const { tracks: TRACKS = [], dedications = [], live } = useContent(); // sample data, or MySQL through PHP
+  const [list, setList] = useState(dedications);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const { user } = useAuth();
   // signed in: their name is already filled in
-  const blank = { name: user?.name || "", to: "", song: "t1", text: "" };
+  const blank = { name: user?.name || "", to: "", song: TRACKS[0]?.id || "t1", text: "" };
   const [form, setForm] = useState(blank);
   const [sent, setSent] = useState(false);
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const submit = e => {
+  const submit = async e => {
     e.preventDefault();
-    if (!form.name.trim() || !form.to.trim()) return;
-    setList(l => [{ ...form, ago: "Just now", mine: true }, ...l]);
+    if (!form.name.trim() || !form.to.trim() || busy) return;
+    setError("");
+    let saved = { ...form, ago: "Just now", mine: true }; // DEMO: stays on this page
+    if (live) {
+      // LIVE: saved in MySQL through dedications.php
+      setBusy(true);
+      try {
+        const songId = TRACKS.find(tr => tr.id === form.song)?.dbId;
+        saved = { ...(await writes.dedicate({ name: form.name, to: form.to, songId, text: form.text })), mine: true };
+      } catch (err) {
+        setError(err.message);
+        setBusy(false);
+        return;
+      }
+      setBusy(false);
+    }
+    setList(l => [saved, ...l]);
     setForm(blank);
     setSent(true);
     setTimeout(() => setSent(false), 3500);
@@ -124,9 +142,10 @@ function Dedicate() {
           {t("Your message")}
           <textarea id={`${id}-msg`} value={form.text} onChange={set("text")} rows={3} className={`${field} h-auto py-3`} />
         </label>
-        <button type="submit" className="pill-dark min-h-[52px] text-base">
+        <button type="submit" disabled={busy} className="pill-dark min-h-[52px] text-base disabled:opacity-60">
           <Send aria-hidden className="h-4 w-4" /> {t("Send dedication")}
         </button>
+        {error && <p role="alert" className="font-semibold text-[#9A3412]">{t(error)}</p>}
         <AnimatePresence>
           {sent && (
             <motion.p role="status" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 font-semibold text-ochre">
@@ -134,7 +153,7 @@ function Dedicate() {
             </motion.p>
           )}
         </AnimatePresence>
-        <p className="text-xs text-bark">{t("Demo: nothing is sent yet.")}</p>
+        {!live && <p className="text-xs text-bark">{t("Demo: nothing is sent yet.")}</p>}
       </form>
 
       <div className="flex min-w-0 flex-col gap-4">
@@ -144,11 +163,11 @@ function Dedicate() {
             {list.slice(0, 4).map((d, i) => {
               const song = TRACKS.find(tr => tr.id === d.song);
               return (
-                <motion.li key={d.name + d.ago + i} layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-dune bg-bone/70 p-4">
+                <motion.li key={d.id || d.name + d.ago + i} layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-dune bg-bone/70 p-4">
                   <p className="text-sm text-bark">
-                    <strong className="text-umber">{d.name}</strong> → {t("For")} <strong className="text-umber">{d.mine ? d.to : t(d.to)}</strong> · {t(d.ago)}
+                    <strong className="text-umber">{d.name}</strong> → {t("For")} <strong className="text-umber">{d.mine || d.live ? d.to : t(d.to)}</strong> · {t(d.ago)}
                   </p>
-                  {d.text && <p className="mt-1.5 font-serif text-lg italic leading-snug">“{d.mine ? d.text : t(d.text)}”</p>}
+                  {d.text && <p className="mt-1.5 font-serif text-lg italic leading-snug">“{d.mine || d.live ? d.text : t(d.text)}”</p>}
                   <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-ochre"><ListMusic aria-hidden className="h-4 w-4" /> {song?.title} · {song?.artist}</p>
                 </motion.li>
               );
@@ -163,9 +182,11 @@ function Dedicate() {
 export default function MusicPage() {
   const { t } = useLang();
   const { index, playing, select, toggle } = usePlayer();
+  const { tracks: TRACKS = [] } = useContent(); // sample data, or MySQL through PHP
+  const trackIndex = id => TRACKS.findIndex(tr => tr.id === id);
   const [genre, setGenre] = useState("All");
   const list = TRACKS.map((tr, i) => ({ ...tr, i })).filter(tr => genre === "All" || tr.genre === genre);
-  const top = useMemo(() => [...TRACKS].sort((a, b) => playsNum(b.plays) - playsNum(a.plays)).slice(0, 3), []);
+  const top = useMemo(() => [...TRACKS].sort((a, b) => playsNum(b.plays) - playsNum(a.plays)).slice(0, 3), [TRACKS]);
   const play = i => (i === index ? toggle() : select(i));
 
   return (

@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, Headphones, Mic, Pause, Play, RotateCcw, RotateCw } from "lucide-react";
-import { EPISODES, HOST, PHOTOS, episodeBySlug } from "../lib/data.js";
+import { HOST, PHOTOS } from "../lib/data.js";
+import { useContent, useDetail } from "../lib/content.jsx";
+import Loading from "../components/Loading.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { fmt } from "../lib/player.jsx";
@@ -42,7 +44,9 @@ function EpisodeCard({ ep }) {
 /* /podcast */
 export default function PodcastPage() {
   const { t } = useLang();
+  const { episodes: EPISODES = [], ready } = useContent(); // sample data, or MySQL through PHP
   const [latest, ...older] = EPISODES;
+  if (!ready) return <Loading />;
   return (
     <>
       <PageHeader
@@ -185,12 +189,14 @@ function EpisodePlayer({ ep }) {
 export function EpisodePage() {
   const { slug } = useParams();
   const { t } = useLang();
-  const ep = episodeBySlug(slug);
+  const { episodes: EPISODES = [], ready } = useContent();
+  const { item: ep, loading } = useDetail("episode", slug); // with its comments
 
   useEffect(() => {
     if (ep) document.title = `Ep. ${ep.number} · ${t(ep.title)} · ${t("Voice of the Desert")}`;
   }, [ep, t]);
 
+  if (loading || !ready) return <Loading dark />;
   if (!ep) {
     return (
       <section className="paper flex min-h-[70vh] flex-col items-center justify-center gap-5 bg-bone px-5 pb-20 pt-40 text-center text-umber">
@@ -200,7 +206,7 @@ export function EpisodePage() {
     );
   }
 
-  const more = EPISODES.filter(e => e !== ep).slice(0, 3);
+  const more = EPISODES.filter(e => e.slug !== ep.slug).slice(0, 3);
 
   return (
     <div key={ep.slug}>

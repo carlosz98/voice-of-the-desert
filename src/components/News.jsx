@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { ARTICLES, HOST, LEAD_STORY, NEWS_FILTERS } from "../lib/data.js";
+import { HOST, NEWS_FILTERS } from "../lib/data.js";
+import { useContent } from "../lib/content.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { Accent } from "./ui/Accent.jsx";
@@ -12,8 +13,11 @@ import { Avatar, Desk, StoryCard, storyPath } from "./news/parts.jsx";
 const ON_HOME = 4; // the newest few; the rest live on /noticias
 
 /* Lead story with his take: used on the home page and on /noticias. */
-export function LeadStory({ story = LEAD_STORY, headingLevel = 3 }) {
+export function LeadStory({ story: given, headingLevel = 3 }) {
+  const { lead } = useContent();
   const { t } = useLang();
+  const story = given || lead;
+  if (!story) return null;
   const H = `h${headingLevel}`;
   return (
     <Reveal as="article" className="flex flex-wrap gap-10 border-t-2 border-umber pb-11 pt-8">
@@ -59,7 +63,8 @@ export function LeadStory({ story = LEAD_STORY, headingLevel = 3 }) {
 export default function News() {
   const { t } = useLang();
   const [filter, setFilter] = useState("All");
-  const shown = ARTICLES.filter(a => filter === "All" || a.category === filter).slice(0, ON_HOME);
+  const { articles = [], ready } = useContent();
+  const shown = articles.filter(a => filter === "All" || a.category === filter).slice(0, ON_HOME);
   const allLink = filter === "All" ? "/noticias" : `/noticias?tema=${encodeURIComponent(filter)}`;
 
   return (

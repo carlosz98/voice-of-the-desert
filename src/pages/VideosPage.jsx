@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { ALL_VIDEOS, HOST, PHOTOS, VIDEO_FILTERS, videoBySlug } from "../lib/data.js";
+import { HOST, PHOTOS, VIDEO_FILTERS } from "../lib/data.js";
+import { useContent, useDetail } from "../lib/content.jsx";
+import Loading from "../components/Loading.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { tuneIn } from "../lib/radio.js";
@@ -40,10 +42,13 @@ export function VideoCard({ video, big = false }) {
 /* /videos */
 export default function VideosPage() {
   const { t, lang } = useLang();
+  const { videos: ALL_VIDEOS = [], ready } = useContent(); // sample data, or MySQL through PHP
   const [params, setParams] = useSearchParams();
   const filter = VIDEO_FILTERS.includes(params.get("de")) ? params.get("de") : "All";
   const list = ALL_VIDEOS.filter(v => filter === "All" || v.from === filter);
   const [first, ...rest] = list;
+
+  if (!ready) return <Loading />;
 
   return (
     <>
@@ -153,12 +158,14 @@ function DemoPlayer({ video }) {
 export function VideoPage() {
   const { slug } = useParams();
   const { t } = useLang();
-  const video = videoBySlug(slug);
+  const { videos: ALL_VIDEOS = [], ready } = useContent();
+  const { item: video, loading } = useDetail("video", slug); // with its comments
 
   useEffect(() => {
     if (video) document.title = `${t(video.title)} · ${t("Voice of the Desert")}`;
   }, [video, t]);
 
+  if (loading || !ready) return <Loading dark />;
   if (!video) {
     return (
       <section className="paper flex min-h-[70vh] flex-col items-center justify-center gap-5 bg-bone px-5 pb-20 pt-40 text-center text-umber">
@@ -168,7 +175,7 @@ export function VideoPage() {
     );
   }
 
-  const more = ALL_VIDEOS.filter(v => v !== video).slice(0, 3);
+  const more = ALL_VIDEOS.filter(v => v.slug !== video.slug).slice(0, 3);
 
   return (
     <div key={video.slug} className="paper bg-bone text-umber">

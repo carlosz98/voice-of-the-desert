@@ -41,7 +41,7 @@ export class ApiError extends Error {
 }
 
 /* ---------- LIVE: call a PHP file ---------- */
-async function call(file, { method = "GET", body, params } = {}) {
+export async function call(file, { method = "GET", body, params } = {}) {
   const qs = params ? `?${new URLSearchParams(params)}` : "";
   const token = session.get()?.token;
   let res;

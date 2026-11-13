@@ -13,6 +13,7 @@ Get these ready and step 3 goes quickly. Things only **you** can do (your accoun
 
 ## B. The account and the money 👤
 
+- [ ] **Turn on 2-step verification** for that Google account (https://myaccount.google.com/security). This account controls the database, so it needs more than a password.
 - [ ] Go to https://console.cloud.google.com and accept the terms.
 - [ ] **Start the free trial** to get the **$300 credit for 90 days**. Note the **end date** here: ________
 - [ ] **Create a budget alert:** Billing → Budgets & alerts → Create budget.

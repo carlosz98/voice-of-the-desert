@@ -21,6 +21,7 @@ import { PlayerProvider } from "./lib/player.jsx";
 import { LangProvider } from "./lib/i18n.jsx";
 import { AuthProvider } from "./lib/auth.jsx";
 import { RadioProvider } from "./lib/radio-live.jsx";
+import { ContentProvider } from "./lib/content.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -29,11 +30,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <MotionConfig reducedMotion="user">
       <LangProvider>
         <AuthProvider>
-          <PlayerProvider>
-            <RadioProvider>
-              <App />
-            </RadioProvider>
-          </PlayerProvider>
+          {/* the content: sample data, or MySQL through PHP (lib/content.jsx) */}
+          <ContentProvider>
+            <PlayerProvider>
+              <RadioProvider>
+                <App />
+              </RadioProvider>
+            </PlayerProvider>
+          </ContentProvider>
         </AuthProvider>
       </LangProvider>
     </MotionConfig>

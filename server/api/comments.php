@@ -3,6 +3,7 @@
  *  comments.php: comments on articles, videos and episodes
  *
  *  GET    comments.php?type=article&id=1   → the comments (anyone can read)
+ *  GET    comments.php?recent=1            → Felipe: the latest 30 from readers
  *  POST   comments.php  {type, id, text}   → signed-in people comment
  *  DELETE comments.php?id=40               → delete your own comment
  *                                            (Felipe can delete any)
@@ -22,6 +23,23 @@ function type_param(?string $type): string
 }
 
 if (method() === 'GET') {
+    // Felipe's panel: the latest 30 comments from readers, everywhere,
+    // with the title of what they commented on (LEFT JOIN, one per table)
+    if (isset($_GET['recent'])) {
+        only_felipe();
+        send(query(
+            "SELECT c.id, c.item_type, c.item_id, c.user_id, c.name, c.text, c.created_at,
+                    COALESCE(a.title, v.title, e.title) AS item_title,
+                    COALESCE(a.slug,  v.slug,  e.slug)  AS item_slug
+               FROM comments c
+               LEFT JOIN articles a ON c.item_type = 'article' AND a.id = c.item_id
+               LEFT JOIN videos   v ON c.item_type = 'video'   AND v.id = c.item_id
+               LEFT JOIN episodes e ON c.item_type = 'episode' AND e.id = c.item_id
+              WHERE c.is_felipe = FALSE
+              ORDER BY c.created_at DESC, c.id DESC
+              LIMIT 30"
+        )->fetchAll());
+    }
     send(comments_for(type_param($_GET['type'] ?? null), id_param()));
 }
 

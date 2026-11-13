@@ -1,13 +1,17 @@
 import { useLang } from "../lib/i18n.jsx";
 import { Accent } from "./ui/Accent.jsx";
 import { Play } from "lucide-react";
-import { FEATURED_VIDEO, VIDEOS } from "../lib/data.js";
+import { useContent } from "../lib/content.jsx";
 import { ImageReveal, Reveal, SectionHead } from "./ui/Reveal.jsx";
 import { NewBadge } from "./ui/NewBadge.jsx";
 import { Link } from "../lib/router.jsx";
 
 export default function Watch() {
   const { t } = useLang();
+  const { videos = [] } = useContent();
+  const FEATURED_VIDEO = videos[0]; // the newest
+  const VIDEOS = videos.slice(1, 4); // the three under it
+  if (!FEATURED_VIDEO) return null;
   return (
     <section id="watch" aria-labelledby="watch-h" className="scroll-mt-20 bg-earth">
       <div className="container-x py-20 sm:py-24">

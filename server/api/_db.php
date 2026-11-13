@@ -277,6 +277,7 @@ function public_user(array $u): array
         'email' => $u['email'],
         'role'  => $u['role'],
         'town'  => $u['town'] ?? null,
+        'member_since' => $u['created_at'] ?? null, // "Miembro desde..."
     ];
 }
 

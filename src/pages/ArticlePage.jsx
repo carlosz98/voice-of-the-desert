@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Link2 } from "lucide-react";
-import { ALL_STORIES, HOST, storyBySlug } from "../lib/data.js";
+import { HOST } from "../lib/data.js";
+import { useContent, useDetail } from "../lib/content.jsx";
+import Loading from "../components/Loading.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { EASE, ImageReveal, Reveal } from "../components/ui/Reveal.jsx";
@@ -54,21 +56,24 @@ function Missing() {
 export default function ArticlePage() {
   const { slug } = useParams();
   const { t } = useLang();
-  const story = storyBySlug(slug);
+  const { stories = [], ready } = useContent();
+  // the full story: body + comments (sample data, or from MySQL)
+  const { item: story, loading } = useDetail("article", slug);
 
   useEffect(() => {
     if (story) document.title = `${t(story.title)} · ${t("Voice of the Desert")}`;
   }, [story, t]);
 
+  if (loading || !ready) return <Loading />;
   if (!story) return <Missing />;
 
-  const index = ALL_STORIES.indexOf(story);
-  const prev = ALL_STORIES[index - 1];
-  const next = ALL_STORIES[index + 1];
+  const index = stories.findIndex(a => a.slug === story.slug);
+  const prev = stories[index - 1];
+  const next = stories[index + 1];
   // same topic first, then the newest others
   const related = [
-    ...ALL_STORIES.filter(a => a !== story && a.category === story.category),
-    ...ALL_STORIES.filter(a => a !== story && a.category !== story.category),
+    ...stories.filter(a => a.slug !== story.slug && a.category === story.category),
+    ...stories.filter(a => a.slug !== story.slug && a.category !== story.category),
   ].slice(0, 3);
   const body = story.body || [story.summary];
 

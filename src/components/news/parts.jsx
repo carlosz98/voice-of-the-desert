@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Camera, Link2, MessageCircle, Mic, Music, NotebookPen, Send } from "lucide-react";
-import { DESK, HOST, LEAD_STORY, NEXT_POST } from "../../lib/data.js";
+import { HOST, NEXT_POST } from "../../lib/data.js";
+import { useContent, writes } from "../../lib/content.jsx";
 import { useLang } from "../../lib/i18n.jsx";
 import { Link } from "../../lib/router.jsx";
 import { useLocation } from "react-router-dom";
@@ -88,25 +89,58 @@ export function StoryRow({ story, rank }) {
 export function Comments({ story, idPrefix = "c" }) {
   const { t } = useLang();
   const { user, isFelipe } = useAuth();
+  const { live } = useContent();
   const { pathname } = useLocation();
   const [extra, setExtra] = useState([]);
+  const [gone, setGone] = useState([]);
   const [draft, setDraft] = useState("");
-  const thread = [...(story.thread || []), ...extra];
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const thread = [...(story.thread || []), ...extra]
+    .filter(c => !gone.includes(c.id))
+    // mine = I wrote it (so I can delete it). Felipe can delete any in LIVE mode.
+    .map(c => ({ ...c, mine: c.mine || (live && user && c.userId === user.id), canDelete: c.mine || (live && user && (c.userId === user.id || isFelipe)) }));
   const back = encodeURIComponent(pathname);
+  const count = live ? thread.length : (story.comments || thread.length) + extra.length - gone.length;
 
-  const post = e => {
+  const post = async e => {
     e.preventDefault();
-    if (!draft.trim() || !user) return;
-    const id = Date.now();
-    setExtra(x => [...x, { id, name: user.name, host: isFelipe, ago: "Just now", text: draft.trim(), mine: true }]);
-    setDraft("");
+    const text = draft.trim();
+    if (!text || !user || busy) return;
+    setError("");
+    if (!live) {
+      // DEMO: stays on this page only
+      setExtra(x => [...x, { id: Date.now(), name: user.name, host: isFelipe, ago: "Just now", text, mine: true }]);
+      setDraft("");
+      return;
+    }
+    // LIVE: saved in MySQL through comments.php
+    setBusy(true);
+    try {
+      const saved = await writes.comment(story.type, story.dbId, text);
+      setExtra(x => [...x, saved]);
+      setDraft("");
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusy(false);
   };
-  const removeMine = id => setExtra(x => x.filter(c => c.id !== id));
+
+  const remove = async c => {
+    if (live) {
+      try {
+        await writes.deleteComment(c.id);
+      } catch (err) {
+        return setError(err.message);
+      }
+    }
+    setGone(g => [...g, c.id]);
+  };
 
   return (
     <section aria-labelledby={`${idPrefix}-comments-h`} className="flex flex-col gap-4">
       <h2 id={`${idPrefix}-comments-h`} className="font-display text-2xl font-semibold">
-        {(story.comments || thread.length) + extra.length} {t("comments")}
+        {count} {t("comments")}
       </h2>
       <ul className="flex flex-col gap-4">
         <AnimatePresence initial={false}>
@@ -125,8 +159,8 @@ export function Comments({ story, idPrefix = "c" }) {
                   <strong className="text-[15px]">{c.mine ? c.name : t(c.name)}</strong>
                   {c.host && <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-bold text-umber">{t("Host")}</span>}
                   <span className={`text-xs ${c.host ? "text-dust" : "text-bark"}`}>{t(c.ago)}</span>
-                  {c.mine && (
-                    <button type="button" onClick={() => removeMine(c.id)} className={`ml-auto text-xs font-semibold underline underline-offset-2 ${c.host ? "text-dust hover:text-gold" : "text-bark hover:text-umber"}`}>
+                  {c.canDelete && (
+                    <button type="button" onClick={() => remove(c)} className={`ml-auto text-xs font-semibold underline underline-offset-2 ${c.host ? "text-dust hover:text-gold" : "text-bark hover:text-umber"}`}>
                       {t("Delete")}
                     </button>
                   )}
@@ -150,12 +184,14 @@ export function Comments({ story, idPrefix = "c" }) {
               placeholder={t("Say something kind…")}
               className="h-12 min-w-0 flex-1 rounded-full border border-dune bg-cream px-4 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/40"
             />
-            <button type="submit" className="pill-dark h-12 px-5">
+            <button type="submit" disabled={busy} className="pill-dark h-12 px-5 disabled:opacity-60">
               <Send aria-hidden className="h-4 w-4" /> {t("Post")}
             </button>
           </form>
+          {error && <p role="alert" className="text-sm font-semibold text-[#9A3412]">{t(error)}</p>}
           <p className="text-xs text-bark">
-            {t("Commenting as")} <strong className="font-semibold text-loam">{user.name}</strong> · {t("Demo: comments stay on this page only.")}
+            {t("Commenting as")} <strong className="font-semibold text-loam">{user.name}</strong>
+            {!live && <> · {t("Demo: comments stay on this page only.")}</>}
           </p>
         </>
       ) : (
@@ -193,18 +229,22 @@ export function Desk({ sticky = true }) {
   const { t } = useLang();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
+  const { desk = [], lead, live } = useContent();
   const [typing, setTyping] = useState(false);
-  const [posts, setPosts] = useState(DESK);
+  const [posts, setPosts] = useState(desk);
+  useEffect(() => setPosts(desk), [desk]);
 
+  // DEMO only: a pretend new note "arrives" a few seconds after you scroll here.
+  // In LIVE mode the desk shows Felipe's real notes and nothing is pretended.
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || live) return;
     const a = setTimeout(() => setTyping(true), 1200);
     const b = setTimeout(() => {
       setTyping(false);
       setPosts(p => (p[0]?.id === NEXT_POST.id ? p : [NEXT_POST, ...p]));
     }, 4200);
     return () => { clearTimeout(a); clearTimeout(b); };
-  }, [inView]);
+  }, [inView, live]);
 
   return (
     <aside ref={ref} aria-labelledby="desk-h" className={`rounded-[22px] bg-umber p-5 text-bone shadow-[0_30px_60px_rgba(43,29,23,0.18)] sm:p-6 ${sticky ? "lg:sticky lg:top-24" : ""}`}>
@@ -212,10 +252,12 @@ export function Desk({ sticky = true }) {
         <Avatar size={46} className="ring-2 ring-gold/40 ring-offset-2 ring-offset-umber" />
         <div className="flex flex-col">
           <h2 id="desk-h" className="font-display text-xl font-semibold">{t("From Felipe's desk")}</h2>
-          <span className="flex items-center gap-1.5 text-sm text-dust">
-            <span className="relative flex h-2 w-2"><span className="absolute inset-0 animate-ping2 rounded-full bg-gold" /><span className="relative h-2 w-2 rounded-full bg-gold" /></span>
-            {t("Online now")}
-          </span>
+          {!live && (
+            <span className="flex items-center gap-1.5 text-sm text-dust">
+              <span className="relative flex h-2 w-2"><span className="absolute inset-0 animate-ping2 rounded-full bg-gold" /><span className="relative h-2 w-2 rounded-full bg-gold" /></span>
+              {t("Online now")}
+            </span>
+          )}
         </div>
       </div>
 
@@ -237,7 +279,7 @@ export function Desk({ sticky = true }) {
       <ol className="flex flex-col" aria-live="polite">
         <AnimatePresence initial={false}>
           {posts.map(p => {
-            const k = KIND[p.kind];
+            const k = KIND[p.kind] || KIND.note;
             const Icon = k.icon;
             const fresh = p.id === NEXT_POST.id;
             return (
@@ -258,9 +300,9 @@ export function Desk({ sticky = true }) {
                   </span>
                   <p className={`leading-snug ${p.kind === "note" ? "font-serif text-[19px] italic text-cream" : "text-[15px] text-haze"}`}>{t(p.text)}</p>
                   {p.meta && <span className="text-sm font-semibold text-sun">{t(p.meta)}</span>}
-                  {p.photo && <img src={p.photo} alt={t("The hills behind an adobe house")} loading="lazy" className="mt-1 aspect-[16/9] w-full rounded-xl object-cover" style={{ objectPosition: p.pos }} />}
-                  {p.link === "lead" && (
-                    <Link to={storyPath(LEAD_STORY)} className="mt-0.5 inline-flex min-h-[36px] w-fit items-center text-sm font-bold text-sun hover:underline">
+                  {p.photo && <img src={p.photo} alt={p.live ? "" : t("The hills behind an adobe house")} loading="lazy" className="mt-1 aspect-[16/9] w-full rounded-xl object-cover" style={{ objectPosition: p.pos }} />}
+                  {p.link === "lead" && lead && (
+                    <Link to={storyPath(lead)} className="mt-0.5 inline-flex min-h-[36px] w-fit items-center text-sm font-bold text-sun hover:underline">
                       {t("Read it →")}
                     </Link>
                   )}

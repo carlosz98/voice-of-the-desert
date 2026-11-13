@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, Search, X } from "lucide-react";
-import { ALL_STORIES, NEWS_FILTERS, PHOTOS } from "../lib/data.js";
+import { NEWS_FILTERS, PHOTOS } from "../lib/data.js";
+import { useContent } from "../lib/content.jsx";
+import Loading from "../components/Loading.jsx";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
@@ -17,6 +19,7 @@ const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export default function NewsPage() {
   const { t, lang } = useLang();
+  const { stories = [], ready } = useContent(); // sample data, or MySQL through PHP
   const [params, setParams] = useSearchParams();
   const topic = NEWS_FILTERS.includes(params.get("tema")) ? params.get("tema") : "All";
   const query = params.get("q") || "";
@@ -38,7 +41,7 @@ export default function NewsPage() {
 
   const results = useMemo(() => {
     const q = fold(query.trim());
-    let list = ALL_STORIES.filter(a => topic === "All" || a.category === topic);
+    let list = stories.filter(a => topic === "All" || a.category === topic);
     if (q) {
       list = list.filter(a =>
         [a.title, a.summary, a.take, a.source, a.category, ...(a.body || [])].some(s => fold(t(s) || "").includes(q) || fold(s || "").includes(q))
@@ -46,19 +49,21 @@ export default function NewsPage() {
     }
     if (sort === "comments") list = [...list].sort((x, y) => y.comments - x.comments);
     return list;
-  }, [topic, query, sort, t]);
+  }, [stories, topic, query, sort, t]);
 
   const counts = useMemo(
-    () => Object.fromEntries(NEWS_FILTERS.map(f => [f, f === "All" ? ALL_STORIES.length : ALL_STORIES.filter(a => a.category === f).length])),
-    []
+    () => Object.fromEntries(NEWS_FILTERS.map(f => [f, f === "All" ? stories.length : stories.filter(a => a.category === f).length])),
+    [stories]
   );
-  const mostCommented = useMemo(() => [...ALL_STORIES].sort((x, y) => y.comments - x.comments).slice(0, 4), []);
+  const mostCommented = useMemo(() => [...stories].sort((x, y) => y.comments - x.comments).slice(0, 4), [stories]);
 
   // the big lead treatment only for the plain, newest-first view
   const plain = topic === "All" && !query && sort === "new";
   const [lead, ...rest] = results;
   const grid = plain ? rest : results;
   const visible = grid.slice(0, count);
+
+  if (!ready) return <Loading />;
 
   return (
     <>
@@ -82,7 +87,7 @@ export default function NewsPage() {
             {t("What's going on in Chihuahua and the world, with Felipe's own take on every story.")}
           </motion.p>
           <p className="text-sm text-dust">
-            {ALL_STORIES.length} {t("stories")} · {NEWS_FILTERS.length - 1} {t("Topics").toLowerCase()}
+            {stories.length} {t("stories")} · {NEWS_FILTERS.length - 1} {t("Topics").toLowerCase()}
           </p>
         </div>
       </header>

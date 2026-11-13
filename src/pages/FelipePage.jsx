@@ -4,6 +4,7 @@ import { BookOpen, Check, Mountain, Music, Newspaper, Send } from "lucide-react"
 import { HOST, SLIDES } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
 import { useAuth } from "../lib/auth.jsx";
+import { useContent, writes } from "../lib/content.jsx";
 import Host from "../components/Host.jsx";
 import FelipeSignIn from "../components/FelipeSignIn.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
@@ -27,7 +28,26 @@ const MOMENTS = [
 function WriteToFelipe() {
   const { t } = useLang();
   const { user } = useAuth();
+  const { live } = useContent();
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  // LIVE: saved in MySQL through messages.php (only Felipe can read it)
+  const send = async e => {
+    e.preventDefault();
+    if (!live) return setSent(true);
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      await writes.message({ name: form.get("name"), message: form.get("message") });
+      setSent(true);
+    } catch (err) {
+      setError(err.message);
+    }
+    setBusy(false);
+  };
   const field = "h-12 rounded-xl border border-dune bg-bone px-3.5 text-base font-normal outline-none focus:border-gold focus:ring-2 focus:ring-gold/40";
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -35,27 +55,28 @@ function WriteToFelipe() {
         <motion.div key="sent" role="status" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-3 rounded-[22px] bg-cream p-10 text-center">
           <span className="grid h-14 w-14 place-items-center rounded-full bg-gold text-umber"><Check aria-hidden className="h-7 w-7" /></span>
           <p className="font-display text-xl font-semibold">{t("Thank you! Felipe will read your message soon.")}</p>
-          <p className="text-sm text-bark">{t("Demo: nothing is sent yet.")}</p>
+          {!live && <p className="text-sm text-bark">{t("Demo: nothing is sent yet.")}</p>}
         </motion.div>
       ) : (
         <motion.form
           key="form"
           exit={{ opacity: 0 }}
-          onSubmit={e => { e.preventDefault(); setSent(true); }}
+          onSubmit={send}
           className="flex flex-col gap-4 rounded-[22px] bg-cream p-6 shadow-[0_24px_60px_rgba(43,29,23,0.1)] sm:p-8"
         >
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
             {t("Your name")}
-            <input required autoComplete="name" defaultValue={user?.name || ""} key={user?.id || "guest"} className={field} />
+            <input required name="name" maxLength={100} autoComplete="name" defaultValue={user?.name || ""} key={user?.id || "guest"} className={field} />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
             {t("Message")}
-            <textarea required rows={5} className={`${field} h-auto py-3`} />
+            <textarea required name="message" maxLength={3000} rows={5} className={`${field} h-auto py-3`} />
           </label>
-          <button type="submit" className="pill-dark min-h-[52px] text-base">
+          <button type="submit" disabled={busy} className="pill-dark min-h-[52px] text-base disabled:opacity-60">
             <Send aria-hidden className="h-4 w-4" /> {t("Send message")}
           </button>
-          <p className="text-xs text-bark">{t("Demo: nothing is sent yet.")}</p>
+          {error && <p role="alert" className="font-semibold text-[#9A3412]">{t(error)}</p>}
+          {!live && <p className="text-xs text-bark">{t("Demo: nothing is sent yet.")}</p>}
         </motion.form>
       )}
     </AnimatePresence>

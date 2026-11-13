@@ -3,7 +3,7 @@ import { Accent } from "./ui/Accent.jsx";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
-import { EPISODES } from "../lib/data.js";
+import { useContent } from "../lib/content.jsx";
 import { tuneIn } from "../lib/radio.js";
 import { Reveal, SectionHead } from "./ui/Reveal.jsx";
 import { NewBadge } from "./ui/NewBadge.jsx";
@@ -17,6 +17,7 @@ const STARS = [
 
 export default function Podcast() {
   const { t } = useLang();
+  const { episodes: EPISODES = [] } = useContent(); // sample data, or MySQL through PHP
   const [current, setCurrent] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -35,6 +36,8 @@ export default function Podcast() {
     setProgress(0);
     setPlaying(true);
   };
+
+  if (!ep) return null;
 
   return (
     <section id="podcast" aria-labelledby="pod-h" className="relative scroll-mt-20 overflow-hidden bg-night">
