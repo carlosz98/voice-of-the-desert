@@ -57,7 +57,7 @@ Use a password manager, and **never put these in GitHub**:
 
 1. Create the Cloud SQL instance, its database and the `voz_api` user.
 2. Import `01_schema.sql` and `02_seed.sql`. **Only once.** The schema erases tables, so we never run it again on the live database.
-3. Change Felipe's login to his real email and password.
+3. Change Felipe's login to his real email and password: run `bash scripts/set-felipe-login.sh` in Cloud Shell (it asks for both, prints one SQL line), then run that line in Cloud SQL Studio. His email and password are never saved in the code or on GitHub.
 4. ~~Add a `Dockerfile` to `server/`~~ **Done.** It's `server/Dockerfile`; the walkthrough and the exact deploy commands are in `server/DOCKER.md`.
 5. Deploy `server/api` to Cloud Run, connected to Cloud SQL, with these environment variables:
    - `DB_SOCKET=/cloudsql/PROJECT_ID:us-east1:voz-db`
