@@ -58,7 +58,7 @@ Use a password manager, and **never put these in GitHub**:
 1. Create the Cloud SQL instance, its database and the `voz_api` user.
 2. Import `01_schema.sql` and `02_seed.sql`. **Only once.** The schema erases tables, so we never run it again on the live database.
 3. Change Felipe's login to his real email and password.
-4. Add a `Dockerfile` to `server/` (PHP 8.3 + Apache + pdo_mysql).
+4. ~~Add a `Dockerfile` to `server/`~~ **Done.** It's `server/Dockerfile`; the walkthrough and the exact deploy commands are in `server/DOCKER.md`.
 5. Deploy `server/api` to Cloud Run, connected to Cloud SQL, with these environment variables:
    - `DB_SOCKET=/cloudsql/PROJECT_ID:us-east1:voz-db`
    - `DB_NAME`, `DB_USER`, and `DB_PASS` (from Secret Manager)

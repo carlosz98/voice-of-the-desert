@@ -1,0 +1,7 @@
+# Files that stay OUT of the box. Only server/api goes in.
+tests/
+database/
+*.md
+.env
+# the step-1 learning example connects without a password; not for the internet
+api/hello-db.php
