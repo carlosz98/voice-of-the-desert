@@ -162,4 +162,7 @@ export const ACCOUNT_ES = {
   Songs: "Canciones",
   "Answer your readers, or remove a comment that doesn't belong.": "Responda a sus lectores, o quite un comentario que no corresponde.",
   "No comments from readers yet.": "Todavía no hay comentarios de lectores.",
+
+  // the bad-word filter
+  "Please keep it kind: your text has a word we don't allow here. Please change it and try again.": "Mantengamos un tono amable: su texto tiene una palabra que no se permite aquí. Por favor, cámbiela e intente de nuevo.",
 };

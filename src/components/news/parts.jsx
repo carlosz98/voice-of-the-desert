@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Camera, Link2, MessageCircle, Mic, Music, NotebookPen, Send } from "lucide-react";
 import { HOST, NEXT_POST } from "../../lib/data.js";
 import { useContent, writes } from "../../lib/content.jsx";
+import { kindCheck } from "../../lib/kind-words.js";
 import { useLang } from "../../lib/i18n.jsx";
 import { Link } from "../../lib/router.jsx";
 import { useLocation } from "react-router-dom";
@@ -108,6 +109,9 @@ export function Comments({ story, idPrefix = "c" }) {
     const text = draft.trim();
     if (!text || !user || busy) return;
     setError("");
+    // no bad words (same list as the PHP); Felipe's own words aren't checked
+    const unkind = !isFelipe && kindCheck(text);
+    if (unkind) return setError(unkind);
     if (!live) {
       // DEMO: stays on this page only
       setExtra(x => [...x, { id: Date.now(), name: user.name, host: isFelipe, ago: "Just now", text, mine: true }]);

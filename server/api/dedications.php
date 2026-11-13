@@ -25,6 +25,7 @@ if (method() === 'POST') {
     $to     = need(['to_whom' => 150])['to_whom'];
     $songId = filter_var(input()['song_id'] ?? null, FILTER_VALIDATE_INT) ?: fail('Missing: song_id');
     $msg    = mb_substr(trim((string)(input()['message'] ?? '')), 0, 500);
+    kind_text($name, $to, $msg);               // no bad words (_words.json)
 
     // if the song doesn't exist, the FOREIGN KEY stops it (409 from _db.php)
     query(

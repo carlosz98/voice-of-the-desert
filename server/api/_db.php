@@ -135,6 +135,81 @@ function need(array $fields): array
     return $out;
 }
 
+/* ---------- Kind words: the bad-word filter ----------
+ * kind_text($comment, $name, ...) stops with a polite 400 if any of the
+ * texts has a word from _words.json. Nothing is saved when that happens.
+ * Felipe's own writing is not checked.
+ *
+ * To catch tricks, each text is first "normalized":
+ *   "¡PUTA!" → "puta"    (lowercase, no accents)
+ *   "put4"   → "puta"    (numbers and symbols that look like letters)
+ *   "p u t a", "p.u.t.a" → "puta"  (single letters split apart)
+ * and each word is checked as written AND with repeated letters
+ * squeezed ("puuuuta" → "puta"). Whole words only, so "computadora"
+ * or "disputa" are fine even though they contain "puta". */
+function kind_normalize(string $text): string
+{
+    $text = mb_strtolower($text, 'UTF-8');
+    $text = strtr($text, [
+        'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+        'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+        'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ñ' => 'n', 'ç' => 'c',
+        '0' => 'o', '1' => 'i', '3' => 'e', '4' => 'a', '5' => 's', '7' => 't', '@' => 'a', '$' => 's',
+    ]);
+    // "p u t a", "p.u.t.a", "p-u-t-a": 3 or more single letters in a row → one word
+    return preg_replace_callback(
+        '/(?<!\p{L})\p{L}(?:[\s.\-_*·]+\p{L}(?!\p{L})){2,}/u',
+        fn($m) => preg_replace('/[^\p{L}]/u', '', $m[0]),
+        $text
+    );
+}
+
+function kind_words(): array
+{
+    static $words = null;
+    if ($words === null) {
+        $raw = json_decode(file_get_contents(__DIR__ . '/_words.json'), true);
+        $words = [];
+        foreach (['exact', 'prefix', 'contains'] as $kind) {
+            $words[$kind] = array_map(fn($w) => kind_normalize($w), $raw[$kind] ?? []);
+        }
+    }
+    return $words;
+}
+
+// true if the text has a word from the list
+function has_bad_word(string $text): bool
+{
+    $w = kind_words();
+    $text = kind_normalize($text);
+    foreach ($w['contains'] as $bad) {             // emoji like 🖕, or "fuck" inside any word
+        if ($bad !== '' && mb_strpos($text, $bad) !== false) return true;
+    }
+    foreach (preg_split('/[^\p{L}]+/u', $text, -1, PREG_SPLIT_NO_EMPTY) as $word) {
+        $squeezed = preg_replace('/(\p{L})\1+/u', '$1', $word);   // "puuuuta" → "puta"
+        foreach ([$word, $squeezed] as $form) {
+            if (in_array($form, $w['exact'], true)) return true;
+            foreach ($w['prefix'] as $start) {
+                if ($start !== '' && str_starts_with($form, $start)) return true;
+            }
+            foreach ($w['contains'] as $bad) {
+                if ($bad !== '' && str_contains($form, $bad)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function kind_text(?string ...$texts): void
+{
+    if (felipe()) return; // Felipe's own words aren't filtered
+    foreach ($texts as $text) {
+        if ($text !== null && $text !== '' && has_bad_word($text)) {
+            fail('Please keep it kind: your text has a word we don\'t allow here. Please change it and try again.', 422);
+        }
+    }
+}
+
 // The value must be one from the list (for ENUM columns like genre)
 //   one_of($data, 'genre', ['Norteño', 'Bolero', ...])
 function one_of(array $data, string $field, array $allowed): void

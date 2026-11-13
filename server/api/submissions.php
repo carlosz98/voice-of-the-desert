@@ -66,6 +66,7 @@ if (method() === 'POST') {
         fail('That link doesn\'t look right. It should start with https://');
     }
     if (!$link && !$fileName) fail('Add a file or a link.');
+    kind_text($data['title'], $description, $fileName); // no bad words (_words.json)
 
     // no more than 10 a day per person, so nobody floods Felipe
     $today = (int)query('SELECT COUNT(*) FROM submissions WHERE user_id = ? AND created_at > UTC_TIMESTAMP() - INTERVAL 1 DAY', [$me['id']])->fetchColumn();

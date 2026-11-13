@@ -50,6 +50,7 @@ if (method() === 'PUT') {
     if (array_key_exists('town', $in)) {
         $changes['town'] = mb_substr(trim((string)$in['town']), 0, 100) ?: null;
     }
+    kind_text($changes['name'] ?? null, $changes['town'] ?? null); // no bad words in names
     if ($changes) save('users', ['name', 'town'], $changes, $me['id']);
 
     send(public_user(my_row($me['id'])));

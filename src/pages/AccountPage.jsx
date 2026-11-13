@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Eye, EyeOff, LayoutDashboard, LogOut, MessageCircle, Music, PenLine, Trash2, UploadCloud, UserRound } from "lucide-react";
 import { MySubmissions } from "../components/Submissions.jsx";
+import { kindCheck } from "../lib/kind-words.js";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, initials } from "../lib/auth.jsx";
 import { LIVE } from "../lib/api.js";
@@ -157,6 +158,8 @@ function RegisterForm({ onDone, switchTo }) {
 
   const submit = async e => {
     e.preventDefault();
+    const unkind = kindCheck(form.name, form.town); // no bad words in names
+    if (unkind) return setError(unkind);
     setBusy(true);
     setError("");
     try {
@@ -354,6 +357,8 @@ function ProfileCard() {
 
   const submit = async e => {
     e.preventDefault();
+    const unkind = kindCheck(name, town); // no bad words in names
+    if (unkind) return setError(unkind);
     setBusy(true);
     setError("");
     try {

@@ -5,6 +5,7 @@ import { HOST, SLIDES } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { useContent, writes } from "../lib/content.jsx";
+import { kindCheck } from "../lib/kind-words.js";
 import Host from "../components/Host.jsx";
 import FelipeSignIn from "../components/FelipeSignIn.jsx";
 import { Accent } from "../components/ui/Accent.jsx";
@@ -36,8 +37,10 @@ function WriteToFelipe() {
   // LIVE: saved in MySQL through messages.php (only Felipe can read it)
   const send = async e => {
     e.preventDefault();
-    if (!live) return setSent(true);
     const form = new FormData(e.currentTarget);
+    const unkind = kindCheck(form.get("name"), form.get("message")); // no bad words, even in private
+    if (unkind) return setError(unkind);
+    if (!live) return setSent(true);
     setBusy(true);
     setError("");
     try {

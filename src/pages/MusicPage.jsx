@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Heart, ListMusic, Pause, Play, Send, SkipBack, SkipForward } from "lucide-react";
 import { GENRES, HOST, PHOTOS, PLAYLISTS } from "../lib/data.js";
 import { useContent, writes } from "../lib/content.jsx";
+import { kindCheck } from "../lib/kind-words.js";
 import { useLang } from "../lib/i18n.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { fmt, usePlayer } from "../lib/player.jsx";
@@ -95,6 +96,8 @@ function Dedicate() {
     e.preventDefault();
     if (!form.name.trim() || !form.to.trim() || busy) return;
     setError("");
+    const unkind = kindCheck(form.name, form.to, form.text); // no bad words
+    if (unkind) return setError(unkind);
     let saved = { ...form, ago: "Just now", mine: true }; // DEMO: stays on this page
     if (live) {
       // LIVE: saved in MySQL through dedications.php

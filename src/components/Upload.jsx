@@ -10,6 +10,7 @@ import { BlockNewsletter } from "@/components/ui/newsletter-signup-ticket";
 import { HOST } from "../lib/data.js";
 import { useAuth, initials } from "../lib/auth.jsx";
 import { submissions, LIVE } from "../lib/api.js";
+import { kindCheck } from "../lib/kind-words.js";
 import { Link } from "../lib/router.jsx";
 
 export const KINDS = [
@@ -90,6 +91,8 @@ function SubmitForm({ onSent }) {
   const submit = async e => {
     e.preventDefault();
     if (!title.trim()) return setError(t("Give it a title."));
+    const unkind = !isFelipe && kindCheck(title, description, file?.name); // no bad words
+    if (unkind) return setError(t(unkind));
     if (!file && !link.trim()) {
       setError(t("Add a file or a link."));
       fileRef.current?.focus();

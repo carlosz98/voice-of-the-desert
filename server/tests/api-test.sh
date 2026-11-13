@@ -111,6 +111,21 @@ check "take back my pending one" "200" "$(code -X DELETE -H "$UH" "$A/submission
 check "spam limit: 10 a day" "429" "$(for i in 1 2 3 4 5 6 7 8 9 10; do code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"x","link":"https://example.com"}' $A/submissions.php >/dev/null; done; code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"x","link":"https://example.com"}' $A/submissions.php)"
 $SQL "DELETE FROM submissions WHERE title='x'" >/dev/null
 
+echo "--- bad-word filter (server side, even if someone skips the website)"
+check "comment with bad word refused (422)" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"eres un pendejo"}' $A/comments.php)"
+check "trick: stretched letters" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"puuuuta madre"}' $A/comments.php)"
+check "trick: spaced letters" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"p u t a"}' $A/comments.php)"
+check "trick: numbers for letters" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"put4"}' $A/comments.php)"
+check "English too" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"what the fuck"}' $A/comments.php)"
+check "innocent word allowed (computadora, disputa)" "201" "$(code -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"La disputa por la computadora"}' $A/comments.php)"
+$SQL "DELETE FROM comments WHERE text='La disputa por la computadora'" >/dev/null
+check "nothing saved when refused" "0" "$($SQL "SELECT COUNT(*) FROM comments WHERE text LIKE '%pendejo%'")"
+check "dedication refused" "422" "$(code -X POST -H "$J" -d '{"name":"Ana","to_whom":"mi suegra la culera","song_id":2}' $A/dedications.php)"
+check "message to Felipe refused" "422" "$(code -X POST -H "$J" -d '{"name":"x","message":"chingada madre"}' $A/messages.php)"
+check "submission title refused" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"kind":"news","title":"pinche feria","link":"https://example.com"}' $A/submissions.php)"
+check "rude account name refused" "422" "$(code -X POST -H "$J" -d '{"name":"El Cabrón","email":"rude@example.com","password":"cactus123"}' $A/register.php)"
+r=$(curl -s -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"eres un pendejo"}' $A/comments.php); check "polite message" "Please keep it kind" "$r"
+
 echo "--- my account"
 r=$(curl -s -H "$UH" $A/account.php); check "account details" '"comment_count":0' "$r"
 check "account counts submissions" '"submission_count":1' "$r"

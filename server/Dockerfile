@@ -34,7 +34,8 @@ RUN echo 'SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' > /etc/apache2/co
 #    PHP errors on the page (they go to the Cloud Run logs instead),
 #    and no folder listings.
 #    (named zz-... so Apache reads it LAST and it wins over the image's security.conf)
-RUN printf 'ServerName localhost\nServerTokens Prod\nServerSignature Off\n<Directory /var/www/html>\n  Options -Indexes\n</Directory>\n' > /etc/apache2/conf-enabled/zz-voz-security.conf \
+#    Files starting with _ (_db.php, _words.json) can't be opened from the internet.
+RUN printf 'ServerName localhost\nServerTokens Prod\nServerSignature Off\n<Directory /var/www/html>\n  Options -Indexes\n</Directory>\n<FilesMatch "^_">\n  Require all denied\n</FilesMatch>\n' > /etc/apache2/conf-enabled/zz-voz-security.conf \
  && printf 'expose_php = Off\ndisplay_errors = Off\nlog_errors = On\nerror_log = /dev/stderr\n' > /usr/local/etc/php/conf.d/voz.ini
 
 # 6. Copy our PHP files into Apache's web folder.

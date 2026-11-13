@@ -54,6 +54,7 @@ if (method() === 'POST') {
     if (!query("SELECT 1 FROM $table WHERE id = ?", [$itemId])->fetch()) fail('Not found', 404);
 
     $text = need(['text' => 2000])['text'];
+    kind_text($text);                         // no bad words (_words.json)
 
     query(
         'INSERT INTO comments (item_type, item_id, user_id, name, text, is_felipe) VALUES (?, ?, ?, ?, ?, ?)',

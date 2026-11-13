@@ -22,6 +22,7 @@ $password = (string)(input()['password'] ?? '');   // exactly as typed: never tr
 $town     = mb_substr(trim((string)(input()['town'] ?? '')), 0, 100) ?: null;
 
 if ($password === '') fail('Missing: password');
+kind_text($in['name'], $town);                 // no bad words in names (_words.json)
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail('That email doesn\'t look right.');
 check_password_rules($password);
 if (query('SELECT 1 FROM users WHERE email = ?', [$email])->fetch()) {

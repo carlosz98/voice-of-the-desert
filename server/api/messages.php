@@ -16,6 +16,7 @@ if (method() === 'POST') {
     $me      = current_user();                // may be null: no account needed
     $name    = $me ? $me['name'] : need(['name' => 100])['name'];
     $message = need(['message' => 3000])['message'];
+    kind_text($name, $message);               // no bad words, even in private
     query('INSERT INTO messages (name, message, user_id) VALUES (?, ?, ?)', [$name, $message, $me['id'] ?? null]);
     send(['ok' => true], 201);
 }
