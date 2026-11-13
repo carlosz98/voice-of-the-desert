@@ -17,6 +17,7 @@ import VersePage from "./pages/VersePage.jsx";
 import UploadPage from "./pages/UploadPage.jsx";
 import PanelPage from "./pages/PanelPage.jsx";
 import AccountPage from "./pages/AccountPage.jsx";
+import PrivacyPage from "./pages/PrivacyPage.jsx";
 import RadioPage from "./pages/RadioPage.jsx";
 import { FEATURES } from "./lib/features.js";
 
@@ -61,6 +62,7 @@ function Site() {
           <Route path="/subir" element={<UploadPage />} />
           <Route path="/panel" element={<PanelPage />} />
           <Route path="/cuenta" element={<AccountPage />} />
+          <Route path="/privacidad" element={<PrivacyPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

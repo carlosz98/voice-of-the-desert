@@ -8,6 +8,7 @@
 #    MYSQL=mariadb ...                                              # if your client is called mariadb
 # ============================================================
 A=${API:-http://127.0.0.1:8088}
+FP=${FELIPE_PASSWORD:?"Set FELIPE_PASSWORD to Felipe's password (the one used when making 02_seed.sql)"}
 SQL="${MYSQL:-mysql} -N -u root voz_del_desierto -e"
 pass=0; failn=0
 check() { # name, expected substring, actual
@@ -126,6 +127,16 @@ check "submission title refused" "422" "$(code -X POST -H "$UH" -H "$J" -d '{"ki
 check "rude account name refused" "422" "$(code -X POST -H "$J" -d '{"name":"El Cabrón","email":"rude@example.com","password":"cactus123"}' $A/register.php)"
 r=$(curl -s -X POST -H "$UH" -H "$J" -d '{"type":"article","id":1,"text":"eres un pendejo"}' $A/comments.php); check "polite message" "Please keep it kind" "$r"
 
+echo "--- newsletter"
+check "join the letter" "201" "$(code -X POST -H "$J" -d '{"email":"Lector@Example.com"}' $A/newsletter.php)"
+check "joining twice answers the same" "201" "$(code -X POST -H "$J" -d '{"email":"lector@example.com"}' $A/newsletter.php)"
+check "saved once, lowercase" "1" "$($SQL "SELECT COUNT(*) FROM newsletter WHERE email='lector@example.com'")"
+check "bad email refused" "400" "$(code -X POST -H "$J" -d '{"email":"nope"}' $A/newsletter.php)"
+check "visitors can't read the list" "401" "$(code $A/newsletter.php)"
+check "no verse from Felipe yet = 404" "404" "$(code "$A/verses.php?day=2030-01-01")"
+check "bad date refused" "400" "$(code "$A/verses.php?day=2030-02-31")"
+check "visitors can't set a verse" "401" "$(code -X POST -H "$J" -d '{"day":"2030-01-01","reference":"x","text":"x"}' $A/verses.php)"
+
 echo "--- my account"
 r=$(curl -s -H "$UH" $A/account.php); check "account details" '"comment_count":0' "$r"
 check "account counts submissions" '"submission_count":1' "$r"
@@ -136,7 +147,7 @@ check "old password stops working" "401" "$(code -X POST -H "$J" -d '{"email":"c
 check "new password works" "201" "$(code -X POST -H "$J" -d '{"email":"carlos@example.com","password":"nopal4567"}' $A/login.php)"
 
 echo "--- Felipe signs in like everyone, and gets his panel"
-r=$(curl -s -X POST -H "$J" -d '{"email":"felipe@example.com","password":"desierto"}' $A/login.php); check "felipe login role" '"role":"felipe"' "$r"
+r=$(curl -s -X POST -H "$J" -d "{\"email\":\"felipe@example.com\",\"password\":\"$FP\"}" $A/login.php); check "felipe login role" '"role":"felipe"' "$r"
 H="Authorization: Bearer $(echo "$r" | field token)"
 r=$(curl -s -H "$H" "$A/submissions.php?all=1&status=pending"); check "felipe sees pending" 'Boda en Delicias' "$r"
 check "pending list has Rosa's too" 'The night market' "$r"
@@ -168,7 +179,13 @@ r=$(curl -s -X POST -H "$H" -H "$J" -d '{"title":"Video nuevo"}' $A/videos.php);
 r=$(curl -s -X POST -H "$H" -H "$J" -d '{"text":"Buenos días"}' $A/desk.php); check "felipe desk note" '"kind":"note"' "$r"
 check "felipe deletes article" "200" "$(code -X DELETE -H "$H" "$A/articles.php?id=$NEW")"
 check "its comments are gone" "0" "$($SQL "SELECT COUNT(*) FROM comments WHERE item_type='article' AND item_id=$NEW")"
-check "felipe account can't be deleted" "403" "$(code -X DELETE -H "$H" -H "$J" -d '{"password":"desierto"}' $A/account.php)"
+r=$(curl -s -X POST -H "$H" -H "$J" -d '{"day":"2030-01-01","reference":"Salmos 23:1","text":"Jehová es mi pastor; nada me faltará.","reflection":"Buenos días."}' $A/verses.php); check "felipe sets a verse" '"reference":"Salmos 23:1"' "$r"
+r=$(curl -s "$A/verses.php?day=2030-01-01"); check "anyone reads it, with reflection" '"reflection":"Buenos días."' "$r"
+r=$(curl -s -X POST -H "$H" -H "$J" -d '{"day":"2030-01-01","reference":"Juan 3:16","text":"Porque de tal manera amó Dios al mundo"}' $A/verses.php); check "same day again replaces it" '"reference":"Juan 3:16"' "$r"
+check "still one verse that day" "1" "$($SQL "SELECT COUNT(*) FROM verses WHERE day='2030-01-01'")"
+r=$(curl -s -H "$H" "$A/verses.php?upcoming=1&from=2029-12-01"); check "felipe sees upcoming verses" '"day":"2030-01-01"' "$r"
+r=$(curl -s -H "$H" $A/newsletter.php); check "felipe sees the letter list" '"email":"lector@example.com"' "$r"
+check "felipe account can't be deleted" "403" "$(code -X DELETE -H "$H" -H "$J" -d "{\"password\":\"$FP\"}" $A/account.php)"
 
 echo "--- security: sign-in, tickets, SQL injection"
 # tickets are stored only as a sha256 hash

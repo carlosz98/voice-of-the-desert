@@ -77,13 +77,25 @@ async function hash(text) {
   return `weak-${h}`;
 }
 
+// Felipe's demo password is a long passphrase. Only its SHA-256 hash is here,
+// so reading this code doesn't reveal it. (The real site uses PHP + bcrypt.)
+const FELIPE_DEMO_HASH = "7af67054d91b41ba7dfc027d76262d25f3a58565ddd8e633f4114d86ae9540f0";
+
 async function demoUsers() {
   let users;
   try { users = JSON.parse(localStorage.getItem(USERS_KEY)); } catch {}
+  // browsers that saved the old, simple password get the new one
+  if (Array.isArray(users)) {
+    const felipe = users.find(u => u.id === 1);
+    if (felipe && felipe.hash !== FELIPE_DEMO_HASH) {
+      felipe.hash = FELIPE_DEMO_HASH;
+      saveDemoUsers(users);
+    }
+  }
   if (!Array.isArray(users)) {
     // the same two accounts as the database's 02_seed.sql
     users = [
-      { id: 1, name: "Felipe Lerma", email: "felipe@example.com", role: "felipe", town: "Chihuahua", hash: await hash("desierto"), created_at: "2026-10-01T12:00:00Z" },
+      { id: 1, name: "Felipe Lerma", email: "felipe@example.com", role: "felipe", town: "Chihuahua", hash: FELIPE_DEMO_HASH, created_at: "2026-10-01T12:00:00Z" },
       { id: 2, name: "Rosa M.", email: "rosa@example.com", role: "user", town: "Chihuahua", hash: await hash("demo1234"), created_at: "2026-10-02T12:00:00Z" },
     ];
     saveDemoUsers(users);

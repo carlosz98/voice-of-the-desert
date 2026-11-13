@@ -24,7 +24,12 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # VITE_API_URL comes from a repository variable (Settings → Secrets and
+      # variables → Actions → Variables). Empty = demo mode with sample content.
+      # Set it to the Cloud Run address and push: the site reads from MySQL.
       - run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

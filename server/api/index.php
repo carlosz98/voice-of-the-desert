@@ -15,5 +15,5 @@ try {
 send([
     'api'      => 'La Voz del Desierto',
     'database' => $db,
-    'files'    => ['register.php', 'login.php', 'account.php', 'submissions.php', 'articles.php', 'videos.php', 'songs.php', 'episodes.php', 'comments.php', 'dedications.php', 'messages.php', 'desk.php'],
+    'files'    => ['register.php', 'login.php', 'account.php', 'submissions.php', 'newsletter.php', 'verses.php', 'articles.php', 'videos.php', 'songs.php', 'episodes.php', 'comments.php', 'dedications.php', 'messages.php', 'desk.php'],
 ]);

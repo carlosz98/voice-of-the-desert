@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Copy, RotateCw } from "lucide-react";
 import { HOST } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
-import { dayNumber, loadVerse, verseForDay } from "../lib/verses.js";
+import { dayNumber, loadDayVerse } from "../lib/verses.js";
 import { Accent } from "./ui/Accent.jsx";
 import { WhatsAppGlyph, whatsappLink } from "./TopStrip.jsx";
 import { EASE, Reveal } from "./ui/Reveal.jsx";
@@ -31,7 +31,7 @@ export default function Verse() {
   useEffect(() => {
     let alive = true;
     setState(s => (s.status === "ready" ? { ...s, status: "refreshing" } : { status: "loading" }));
-    loadVerse(verseForDay(day), lang)
+    loadDayVerse(day, lang) // Felipe's pick for that day, or the site's rotation
       .then(v => alive && setState({ status: "ready", ...v }))
       .catch(() => alive && setState({ status: "error" }));
     return () => { alive = false; };

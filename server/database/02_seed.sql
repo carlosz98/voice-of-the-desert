@@ -7,11 +7,11 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';  -- dates in UTC, same as the API
 
--- Felipe is user 1, with role 'felipe'. Demo password: desierto
+-- Felipe is user 1, with role 'felipe'. His password is not in this file, only its bcrypt hash.
 -- A visitor account for testing: rosa@example.com / demo1234
 -- (only the hashes are stored; change both before going live)
-INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', '$2y$10$xgJSUwlxqYI1olwBKwSfMuxVHaWgmgLF8cAjOoQTRyPVnua9xD4y.', 'felipe', 'Chihuahua');
-INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', '$2y$10$Nf5slyXmruYqZX4.ty9uMOn/66MrEAx1fWJQxHy3sONu4eti6/Bim', 'user', 'Chihuahua');
+INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', '$2y$10$Ekc0bx287Zrd4C0jPn2uaeYdWArFDCRMzzt31bNIDOrMeOvUE4td2', 'felipe', 'Chihuahua');
+INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', '$2y$10$zfmncg/SgID0jhFmIttSIuK6z.22j7QJ26V4iksmdhkJcH.VmXBm2', 'user', 'Chihuahua');
 
 -- ---------- articles (+ their comments) ----------
 INSERT INTO articles (slug, category, title, summary, body, source, take, long_take, photo, photo_pos, read_minutes, is_lead, published_at) VALUES ('mercado-nocturno-plaza-de-armas', 'Local', 'The night market is back in the Plaza de Armas after four years, and the whole city came out', 'Forty stalls lined the Plaza de Armas in front of the cathedral on Saturday as the night market returned, with food, music and crafts until midnight. Organizers say it will run every second Saturday through spring.', 'For the first time in four years, the cathedral square filled with lanterns, smoke from the grills and the sound of a brass band tuning up. The night market, once a fixture of the town calendar, returned on Saturday with forty stalls and a crowd that organizers put at nearly three thousand.

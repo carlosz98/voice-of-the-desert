@@ -51,7 +51,7 @@ Use a password manager, and **never put these in GitHub**:
 
 - [ ] **Database root password** (Cloud SQL asks for it when creating the database)
 - [ ] **`voz_api` user password** (the one the PHP uses)
-- [ ] **Felipe's real email and a new password** to replace the demo `felipe@example.com` / `desierto`
+- [ ] **Felipe's real email and a new password** to replace the demo `felipe@example.com` account
 
 ## F. What we do in step 3, in order
 

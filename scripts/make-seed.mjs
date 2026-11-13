@@ -9,6 +9,7 @@
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -59,11 +60,17 @@ add("");
 
 // ---------- Felipe's login ----------
 // The hash is made by PHP itself, same as the API will check it.
-const hashOf = password => execFileSync("php", ["-r", `echo password_hash('${password}', PASSWORD_DEFAULT);`]).toString();
-add("-- Felipe is user 1, with role 'felipe'. Demo password: desierto");
+// the password goes to PHP as a separate argument, never inside the PHP code
+const hashOf = password => execFileSync("php", ["-r", "echo password_hash($argv[1], PASSWORD_DEFAULT);", password]).toString();
+// Felipe's password is NEVER written in the code or the repo.
+// Give it when running the script:  FELIPE_PASSWORD='...' node scripts/make-seed.mjs
+// If you don't, a random one is made and shown once on the screen.
+const felipePassword = process.env.FELIPE_PASSWORD || randomBytes(18).toString("base64url");
+if (!process.env.FELIPE_PASSWORD) console.log(`Felipe's password (save it now, it isn't stored anywhere): ${felipePassword}`);
+add("-- Felipe is user 1, with role 'felipe'. His password is not in this file, only its bcrypt hash.");
 add("-- A visitor account for testing: rosa@example.com / demo1234");
 add("-- (only the hashes are stored; change both before going live)");
-add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', ${q(hashOf("desierto"))}, 'felipe', 'Chihuahua');`);
+add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', ${q(hashOf(felipePassword))}, 'felipe', 'Chihuahua');`);
 add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', ${q(hashOf("demo1234"))}, 'user', 'Chihuahua');`);
 add("");
 

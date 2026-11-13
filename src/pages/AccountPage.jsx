@@ -194,6 +194,10 @@ function RegisterForm({ onDone, switchTo }) {
       </div>
       <ErrorNote error={error} />
       <SubmitButton busy={busy}>{t("Create my account")}</SubmitButton>
+      <p className="text-center text-sm text-bark">
+        {t("We keep only what the site needs.")}{" "}
+        <Link to="/privacidad" className="font-semibold text-rust underline underline-offset-4 hover:text-umber">{t("How we protect it")}</Link>
+      </p>
       <p className="text-center text-[15px] text-loam">
         {t("Already have an account?")}{" "}
         <button type="button" onClick={switchTo} className="font-bold text-rust underline underline-offset-4 hover:text-umber">

@@ -4,7 +4,8 @@ import { Check, ChevronRight, Copy, ImageDown, RotateCw } from "lucide-react";
 import { HOST, PHOTOS } from "../lib/data.js";
 import { useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
-import { dayNumber, loadVerse, verseForDay } from "../lib/verses.js";
+import { dayNumber, loadDayVerse } from "../lib/verses.js";
+import { LIVE } from "../lib/api.js";
 import { saveVerseImage } from "../lib/verse-image.js";
 import { dateFor } from "../components/Verse.jsx";
 import { WhatsAppGlyph, whatsappLink } from "../components/TopStrip.jsx";
@@ -64,7 +65,7 @@ export default function VersePage() {
   useEffect(() => {
     let alive = true;
     setState(s => (s.status === "ready" ? { ...s, status: "refreshing" } : { status: "loading" }));
-    loadVerse(verseForDay(day), lang)
+    loadDayVerse(day, lang) // Felipe's pick for that day, or the site's rotation
       .then(v => alive && setState({ status: "ready", ...v }))
       .catch(() => alive && setState({ status: "error" }));
     return () => { alive = false; };
@@ -220,18 +221,20 @@ export default function VersePage() {
       </header>
 
       <div className="paper bg-bone text-umber">
-        {/* Felipe's reflection */}
+        {/* Felipe's reflection: his own words for the day (LIVE), or a placeholder in the demo */}
+        {(state.reflection || !LIVE) && (
         <section aria-labelledby="refl-h" className="container-x flex max-w-[820px] flex-col items-center gap-6 py-16 text-center sm:py-20">
           <Reveal className="w-full">
             <figure className="relative rounded-[6px] border border-dune bg-cream px-7 pb-8 pt-10 shadow-[0_24px_60px_rgba(43,29,23,0.12)] sm:px-12">
               <span aria-hidden className="absolute -top-2 right-10 h-16 w-6 bg-rust [clip-path:polygon(0_0,100%_0,100%_100%,50%_78%,0_100%)]" />
               <img src={HOST.face} alt="" className="mx-auto mb-4 h-20 w-20 rounded-full border-2 border-gold object-cover" />
               <h2 id="refl-h" className="h-display mb-4 text-[clamp(26px,3.2vw,40px)]">{t("A reflection from Felipe")}</h2>
-              <p className="font-serif text-[clamp(22px,2.6vw,28px)] italic leading-snug text-loam">{t("[Felipe's thoughts on today's verse, a few lines in his own words.]")}</p>
+              <p className="whitespace-pre-line font-serif text-[clamp(22px,2.6vw,28px)] italic leading-snug text-loam">{state.reflection || t("[Felipe's thoughts on today's verse, a few lines in his own words.]")}</p>
               <p className="mt-5 font-script text-[40px] leading-none text-rust">— Felipe</p>
             </figure>
           </Reveal>
         </section>
+        )}
 
         {/* read the Bible, right here */}
         <section aria-labelledby="read-h" className="border-t border-dune bg-[radial-gradient(ellipse_at_50%_0%,rgba(240,196,99,0.18),transparent_60%)]">

@@ -292,4 +292,7 @@ export const writes = {
   addEpisode: data => call("episodes.php", { method: "POST", body: data }).then(shapeEpisode),
   addDesk: data => call("desk.php", { method: "POST", body: data }).then(shapeDesk),
   recentComments: () => call("comments.php", { params: { recent: 1 } }),
+  setVerse: data => call("verses.php", { method: "POST", body: data }),
+  // anyone
+  subscribe: email => call("newsletter.php", { method: "POST", body: { email } }),
 };

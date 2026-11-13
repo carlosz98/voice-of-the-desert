@@ -1,3 +1,4 @@
+import { call, LIVE } from "./api.js";
 /* Daily Bible verse.
  * The text comes from the free getBible API (api.getbible.net), which works
  * from the browser: Spanish is the Reina-Valera 1909 ("valera") and English
@@ -49,6 +50,24 @@ export const dayNumber = (date = new Date()) =>
   Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
 
 export const verseForDay = day => VERSES[((day % VERSES.length) + VERSES.length) % VERSES.length];
+
+// day number → "2026-11-14"
+export const isoDay = day => new Date(day * 86400000).toISOString().slice(0, 10);
+
+/* The verse for a day: the one Felipe picked in his panel (verses table),
+ * or, if he didn't pick one, the site's own rotation from the Bible API.
+ * Returns { text, reference, reflection?, fromFelipe? } */
+export async function loadDayVerse(day, lang) {
+  if (LIVE) {
+    try {
+      const v = await call("verses.php", { params: { day: isoDay(day) } });
+      return { text: v.text, reference: v.reference, reflection: v.reflection || "", fromFelipe: true };
+    } catch {
+      // 404 = he didn't pick one for this day: use the rotation below
+    }
+  }
+  return loadVerse(verseForDay(day), lang);
+}
 
 // The 1909 text spells the old preposition "á"/"ó"; show it the modern way.
 const tidy = (text, lang) => {

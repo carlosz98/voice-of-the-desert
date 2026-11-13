@@ -20,6 +20,8 @@
 --    dedications  → "dedicate a song" on the music page
 --    messages     → "Write to Felipe" on his profile
 --    submissions  → what people send from the "Upload" page
+--    newsletter   → emails for "The caravan letter"
+--    verses       → Felipe's own verse of the day + reflection
 --    desk_notes   → "From Felipe's desk", his short notes
 -- ============================================================
 
@@ -31,7 +33,7 @@ USE voz_del_desierto;
 SET NAMES utf8mb4;            -- read this file as utf8 too (for the ñ in Norteño)
 
 -- Start clean every time this file runs (children first, because of the links)
-DROP TABLE IF EXISTS login_attempts, submissions, sessions, admin_tokens, dedications, comments, messages, desk_notes,
+DROP TABLE IF EXISTS newsletter, verses, login_attempts, submissions, sessions, admin_tokens, dedications, comments, messages, desk_notes,
                      episodes, songs, videos, articles, users, admins;
 
 
@@ -251,6 +253,34 @@ CREATE TABLE submissions (
   reviewed_at DATETIME,
   INDEX (status),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+-- ------------------------------------------------------------
+-- newsletter: emails for "The caravan letter" (the ticket form).
+-- UNIQUE: the same email can't be on the list twice.
+-- ------------------------------------------------------------
+CREATE TABLE newsletter (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  email      VARCHAR(150) NOT NULL UNIQUE,
+  user_id    INT          NULL,               -- their account, if signed in
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+
+-- ------------------------------------------------------------
+-- verses: the verse of the day that Felipe picks himself, with
+-- his reflection. One per day (UNIQUE). On days without one,
+-- the site picks a verse from its own list, as it does now.
+-- ------------------------------------------------------------
+CREATE TABLE verses (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  day        DATE         NOT NULL UNIQUE,     -- 2026-11-14
+  reference  VARCHAR(80)  NOT NULL,            -- "Salmos 23:1"
+  text       TEXT         NOT NULL,            -- the verse itself
+  reflection TEXT,                             -- Felipe's few words
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 

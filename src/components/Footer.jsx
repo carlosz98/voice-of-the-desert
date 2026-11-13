@@ -17,6 +17,7 @@ const COLUMNS = [
       ["About Felipe", "/felipe"],
       ["Verse of the day", "/versiculo"],
       ["Upload", "/subir"],
+      ["Privacy", "/privacidad"],
     ],
   },
   {

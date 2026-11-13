@@ -11,6 +11,7 @@ import { HOST } from "../lib/data.js";
 import { useAuth, initials } from "../lib/auth.jsx";
 import { submissions, LIVE } from "../lib/api.js";
 import { kindCheck } from "../lib/kind-words.js";
+import { writes } from "../lib/content.jsx";
 import { Link } from "../lib/router.jsx";
 
 export const KINDS = [
@@ -310,7 +311,15 @@ export default function Upload({ pageTitle = false }) {
             eyebrow={t("THE CARAVAN LETTER, WEEKLY")}
             title={t("First to hear new episodes and Felipe's picks")}
             successMessage={t("You're on the list. See you Friday.")}
-            footnote={t("Demo: no emails are actually sent.")}
+            footnote={t(LIVE ? "Only to send you the letter. Ask Felipe anytime to take you off." : "Demo: no emails are actually sent.")}
+            onSubscribe={
+              LIVE
+                ? email =>
+                    writes.subscribe(email).catch(err => {
+                      throw new Error(t(err.message)); // shown on the ticket, in the visitor's language
+                    })
+                : undefined
+            }
             buttonLabel={t("Join")}
             emailLabel={t("Email address")}
           />

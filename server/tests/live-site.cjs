@@ -13,7 +13,7 @@
 //        npx vite preview --outDir dist-live --port 4177
 //    - Playwright (npm i -D playwright)
 //
-//  Run:  node server/tests/live-site.cjs
+//  Run:  FELIPE_PASSWORD='...' node server/tests/live-site.cjs
 // ============================================================
 const { chromium } = require("playwright");
 const { execSync } = require("child_process");
@@ -136,6 +136,16 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     ok("submission saved", sql("SELECT status FROM submissions WHERE title='Video de la feria'") === "pending");
   });
 
+  await step("newsletter", async () => {
+    await page.goto(`${BASE}/subir`);
+    const ticket = page.locator('input[aria-label="Correo electrónico"]').last();
+    await ticket.scrollIntoViewIfNeeded();
+    await ticket.fill("carta@example.com");
+    await ticket.press("Enter");
+    await page.waitForSelector("text=Ya estás en la lista", { timeout: 8000 }).catch(() => {});
+    ok("newsletter email saved", sql("SELECT COUNT(*) FROM newsletter WHERE email='carta@example.com'") === "1");
+  });
+
   await step("Felipe publishes", async () => {
     await page.goto(`${BASE}/cuenta`);
     await page.click('button:has-text("Salir")');
@@ -143,7 +153,7 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     await page.waitForTimeout(300);
     ok("sign out deletes ticket", sql("SELECT COUNT(*) FROM sessions s JOIN users u ON u.id=s.user_id WHERE u.email='carlos.live@example.com'") === "0");
     await page.fill('input[type="email"]', "felipe@example.com");
-    await page.fill('input[autocomplete="current-password"]', "desierto");
+    await page.fill('input[autocomplete="current-password"]', process.env.FELIPE_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForSelector("text=Miembro desde", { timeout: 8000 });
     await page.goto(`${BASE}/panel`);
@@ -175,6 +185,20 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     await first.locator('button:has-text("Contestar")').click();
     await page.waitForTimeout(800);
     ok("Felipe's answer saved with badge", sql("SELECT COUNT(*) FROM comments WHERE text='Gracias por escribir' AND is_felipe=1") === "1");
+    // verse of the day, with his reflection
+    await page.click('nav button:has-text("Versículo del día")');
+    await page.fill('input[placeholder="Salmos 23:1"]', "Salmos 121:1");
+    await page.locator("textarea").nth(0).fill("Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro?");
+    await page.locator("textarea").nth(1).fill("Cada mañana miro la sierra y me acuerdo de esto.");
+    await page.click('button[aria-pressed]:has-text("Ahora")');
+    await page.click('button:has-text("Publicar")');
+    await page.waitForSelector("text=Ya está en el sitio", { timeout: 10000 });
+    ok("verse saved for today", sql("SELECT reference FROM verses") === "Salmos 121:1");
+    await page.goto(`${BASE}/versiculo`);
+    await page.waitForSelector("text=Alzaré mis ojos a los montes", { timeout: 10000 });
+    ok("verse page shows Felipe's verse", true);
+    ok("verse page shows his reflection", await page.isVisible("text=Cada mañana miro la sierra"));
+    await page.goto(`${BASE}/panel`);
     // review the submission
     await page.click('nav button:has-text("Envíos")');
     await page.waitForSelector("li:has-text('Video de la feria')", { timeout: 8000 });
@@ -184,7 +208,7 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
   });
 
   await step("other pages", async () => {
-    for (const path of ["/videos", "/videos/amanecer-en-la-sierra", "/podcast", "/podcast/el-hombre-que-camino-el-camino-real", "/musica", "/felipe"]) {
+    for (const path of ["/privacidad", "/videos", "/videos/amanecer-en-la-sierra", "/podcast", "/podcast/el-hombre-que-camino-el-camino-real", "/musica", "/felipe"]) {
       await page.goto(`${BASE}${path}`);
       await page.waitForTimeout(1200);
       const txt = await page.textContent("body");

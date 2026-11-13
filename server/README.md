@@ -83,7 +83,7 @@ Videos, songs, episodes and desk notes also have POST / PUT / DELETE for Felipe,
 3. If it matches, PHP makes a random 64-character **token**, saves it in `admin_tokens` (valid for 7 days) and gives it to the website.
 4. The website sends `Authorization: Bearer <token>` with every panel action. `only_felipe()` looks the token up, and without a valid one the answer is **401**.
 
-Demo login: `felipe@example.com` / `desierto`. **Change both before the site goes live.**
+Felipe's password is **never** written in the code. When you make the seed, give it as a setting: `FELIPE_PASSWORD='...' node scripts/make-seed.mjs`, and only its bcrypt hash goes into `02_seed.sql`. On the live database, set his real email and a new password (see the checklist).
 
 ### Safety built in
 

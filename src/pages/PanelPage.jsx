@@ -7,6 +7,7 @@ import {
 import { ReviewDesk, usePendingCount } from "../components/Submissions.jsx";
 import { ALL_STORIES, ALL_VIDEOS, EPISODES, GENRES, HOST, NEWS_FILTERS, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
 import { agoFrom, useContent, writes } from "../lib/content.jsx";
+import { dayNumber, isoDay } from "../lib/verses.js";
 import { greetingFor, useLang } from "../lib/i18n.jsx";
 import { Link } from "../lib/router.jsx";
 import { useAuth } from "../lib/auth.jsx";
@@ -566,10 +567,28 @@ function VerseForm({ onPublish }) {
       form={
         <>
           <Field label={t("Verse")} hint={t("e.g. Salmos 23:1")}><input className={input} value={f.reference} onChange={set("reference")} placeholder="Salmos 23:1" /></Field>
-          <Field label={t("Text of the verse")} hint={t("Later this will fill in by itself from the Bible.")}><textarea rows={3} className={`${area} font-serif text-[20px] italic`} value={f.text} onChange={set("text")} placeholder="Jehová es mi pastor; nada me faltará." /></Field>
+          <Field label={t("Text of the verse")} hint={t("Copy it from your Bible, as you want it to appear.")}><textarea rows={3} className={`${area} font-serif text-[20px] italic`} value={f.text} onChange={set("text")} placeholder="Jehová es mi pastor; nada me faltará." /></Field>
           <Field label={t("Your reflection")}><textarea rows={4} className={area} value={f.reflection} onChange={set("reflection")} placeholder={t("What does this verse say to you today?")} /></Field>
           <Field label={t("When should it appear?")}><Choice options={["Now", "Tomorrow morning"]} value={f.when} onChange={set("when")} label={t("When should it appear?")} /></Field>
-          <Actions ready={!!f.reference.trim()} onPublish={() => onPublish({ kind: "Verse of the day", title: f.reference })} publishLabel={f.when === "Now" ? "Publish" : "Schedule"} needs="Write the verse to publish." />
+          <Actions
+            ready={!!f.reference.trim() && !!f.text.trim()}
+            onPublish={() =>
+              onPublish({
+                kind: "Verse of the day",
+                title: f.reference,
+                // LIVE: saved for today or tomorrow (one verse per day; setting a day again replaces it)
+                save: () =>
+                  writes.setVerse({
+                    day: isoDay(dayNumber() + (f.when === "Now" ? 0 : 1)),
+                    reference: f.reference.trim(),
+                    text: f.text.trim(),
+                    reflection: f.reflection.trim() || null,
+                  }),
+              })
+            }
+            publishLabel={f.when === "Now" ? "Publish" : "Schedule"}
+            needs="Write the verse and its text to publish."
+          />
         </>
       }
       preview={
