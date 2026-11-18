@@ -20,6 +20,8 @@ const { execSync } = require("child_process");
 const BASE = "http://localhost:4177/voice-of-the-desert";
 const OUT = require("os").tmpdir();
 const sql = q => execSync(`mariadb -N --default-character-set=utf8mb4 voz_del_desierto -e ${JSON.stringify(q)}`).toString().trim();
+// a form's own text boxes, not the "Ayúdame a escribir" box (that one has maxlength 3000)
+const FORM_BOX = 'main textarea:not([maxlength="3000"])';
 const results = [];
 const ok = (name, cond, extra = "") => results.push(`${cond ? "ok  " : "FAIL"} ${name} ${extra}`);
 const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, false, e.message.split("\n")[0]); } };
@@ -163,7 +165,7 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     // write news
     await page.click('nav button:has-text("Escribir noticia")');
     await page.fill('input[placeholder*="Plaza de Armas"]', "La feria de Santa Rita vuelve");
-    await page.locator("textarea").first().fill("Del 20 al 30 de mayo, con juegos y música.");
+    await page.locator(FORM_BOX).first().fill("Del 20 al 30 de mayo, con juegos y música.");
     await page.click('button:has-text("Publicar")');
     await page.waitForSelector("text=Ya está en el sitio", { timeout: 10000 });
     ok("article saved in MySQL", sql("SELECT category FROM articles WHERE title='La feria de Santa Rita vuelve'") === "Local");
@@ -173,7 +175,7 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     // quick note → desk
     await page.goto(`${BASE}/panel`);
     await page.click('nav button:has-text("Nota rápida")');
-    await page.locator("textarea").first().fill("Buenos días a todos desde el panel");
+    await page.locator(FORM_BOX).first().fill("Buenos días a todos desde el panel");
     await page.click('button:has-text("Publicar")');
     await page.waitForSelector("text=Ya está en el sitio", { timeout: 10000 });
     ok("desk note saved", sql("SELECT kind FROM desk_notes WHERE text='Buenos días a todos desde el panel'") === "note");
@@ -188,8 +190,8 @@ const step = async (name, fn) => { try { await fn(); } catch (e) { ok(name, fals
     // verse of the day, with his reflection
     await page.click('nav button:has-text("Versículo del día")');
     await page.fill('input[placeholder="Salmos 23:1"]', "Salmos 121:1");
-    await page.locator("textarea").nth(0).fill("Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro?");
-    await page.locator("textarea").nth(1).fill("Cada mañana miro la sierra y me acuerdo de esto.");
+    await page.locator(FORM_BOX).nth(0).fill("Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro?");
+    await page.locator(FORM_BOX).nth(1).fill("Cada mañana miro la sierra y me acuerdo de esto.");
     await page.click('button[aria-pressed]:has-text("Ahora")');
     await page.click('button:has-text("Publicar")');
     await page.waitForSelector("text=Ya está en el sitio", { timeout: 10000 });
