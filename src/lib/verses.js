@@ -108,16 +108,47 @@ export async function loadVerse(v, lang) {
 }
 
 /* ───────── The reader ("Lee la Biblia") ─────────
- * A few chapters to read in the book on /versiculo. Same API and
- * translations as the daily verse. */
-export const READING = [
-  { id: "sal-23", book: 19, chapter: 23 },
-  { id: "sal-91", book: 19, chapter: 91 },
-  { id: "sal-121", book: 19, chapter: 121 },
-  { id: "pro-3", book: 20, chapter: 3 },
-  { id: "jn-14", book: 43, chapter: 14 },
-  { id: "1co-13", book: 46, chapter: 13 },
+ * The whole Bible, 66 books, in the book on /versiculo. Same API and
+ * translations as the daily verse. Each book: [Spanish name, English name, chapters].
+ * The book number is its place in the list (Génesis = 1 … Apocalipsis = 66). */
+export const BOOKS = [
+  ["Génesis", "Genesis", 50], ["Éxodo", "Exodus", 40], ["Levítico", "Leviticus", 27], ["Números", "Numbers", 36],
+  ["Deuteronomio", "Deuteronomy", 34], ["Josué", "Joshua", 24], ["Jueces", "Judges", 21], ["Rut", "Ruth", 4],
+  ["1 Samuel", "1 Samuel", 31], ["2 Samuel", "2 Samuel", 24], ["1 Reyes", "1 Kings", 22], ["2 Reyes", "2 Kings", 25],
+  ["1 Crónicas", "1 Chronicles", 29], ["2 Crónicas", "2 Chronicles", 36], ["Esdras", "Ezra", 10], ["Nehemías", "Nehemiah", 13],
+  ["Ester", "Esther", 10], ["Job", "Job", 42], ["Salmos", "Psalms", 150], ["Proverbios", "Proverbs", 31],
+  ["Eclesiastés", "Ecclesiastes", 12], ["Cantares", "Song of Songs", 8], ["Isaías", "Isaiah", 66], ["Jeremías", "Jeremiah", 52],
+  ["Lamentaciones", "Lamentations", 5], ["Ezequiel", "Ezekiel", 48], ["Daniel", "Daniel", 12], ["Oseas", "Hosea", 14],
+  ["Joel", "Joel", 3], ["Amós", "Amos", 9], ["Abdías", "Obadiah", 1], ["Jonás", "Jonah", 4],
+  ["Miqueas", "Micah", 7], ["Nahúm", "Nahum", 3], ["Habacuc", "Habakkuk", 3], ["Sofonías", "Zephaniah", 3],
+  ["Hageo", "Haggai", 2], ["Zacarías", "Zechariah", 14], ["Malaquías", "Malachi", 4],
+  ["Mateo", "Matthew", 28], ["Marcos", "Mark", 16], ["Lucas", "Luke", 24], ["Juan", "John", 21],
+  ["Hechos", "Acts", 28], ["Romanos", "Romans", 16], ["1 Corintios", "1 Corinthians", 16], ["2 Corintios", "2 Corinthians", 13],
+  ["Gálatas", "Galatians", 6], ["Efesios", "Ephesians", 6], ["Filipenses", "Philippians", 4], ["Colosenses", "Colossians", 4],
+  ["1 Tesalonicenses", "1 Thessalonians", 5], ["2 Tesalonicenses", "2 Thessalonians", 3], ["1 Timoteo", "1 Timothy", 6],
+  ["2 Timoteo", "2 Timothy", 4], ["Tito", "Titus", 3], ["Filemón", "Philemon", 1], ["Hebreos", "Hebrews", 13],
+  ["Santiago", "James", 5], ["1 Pedro", "1 Peter", 5], ["2 Pedro", "2 Peter", 3], ["1 Juan", "1 John", 5],
+  ["2 Juan", "2 John", 1], ["3 Juan", "3 John", 1], ["Judas", "Jude", 1], ["Apocalipsis", "Revelation", 22],
 ];
+export const OLD_TESTAMENT = 39; // books 1–39; the New Testament is 40–66
+export const bookName = (book, lang) => BOOKS[book - 1]?.[lang === "es" ? 0 : 1] || "";
+export const chapterCount = book => BOOKS[book - 1]?.[2] || 1;
+
+// a few favorites as quick buttons above the book
+export const FAVORITES = [
+  { book: 19, chapter: 23 },
+  { book: 19, chapter: 91 },
+  { book: 19, chapter: 121 },
+  { book: 20, chapter: 3 },
+  { book: 43, chapter: 14 },
+  { book: 46, chapter: 13 },
+];
+
+// the chapter after / before this one, across books (null at the ends)
+export function nextChapter({ book, chapter }, d = 1) {
+  if (d > 0) return chapter < chapterCount(book) ? { book, chapter: chapter + 1 } : book < 66 ? { book: book + 1, chapter: 1 } : null;
+  return chapter > 1 ? { book, chapter: chapter - 1 } : book > 1 ? { book: book - 1, chapter: chapterCount(book - 1) } : null;
+}
 
 export async function loadChapter(lang, book, chapter) {
   const data = await getChapter(lang, book, chapter);
@@ -127,13 +158,22 @@ export async function loadChapter(lang, book, chapter) {
   };
 }
 
-/* Where this visitor is reading. Kept in their own browser only. */
+/* Where this visitor is reading. Kept in their own browser only.
+ *   { book: 19, chapter: 23, page: 0, done: ["19-23", "43-14"] } */
 const KEY = "votd-reading";
+const START = { book: 19, chapter: 23, page: 0, done: [] };
+// the first version saved ids like "sal-23": turn them into "19-23"
+const OLD_IDS = { "sal-23": "19-23", "sal-91": "19-91", "sal-121": "19-121", "pro-3": "20-3", "jn-14": "43-14", "1co-13": "46-13" };
 export function readProgress() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) || { id: READING[0].id, page: 0, done: [] };
+    const p = JSON.parse(localStorage.getItem(KEY));
+    if (!p) return START;
+    const done = (p.done || []).map(id => OLD_IDS[id] || id);
+    if (p.book) return { ...START, ...p, done };
+    const [book, chapter] = (OLD_IDS[p.id] || "19-23").split("-").map(Number);
+    return { book, chapter, page: p.page || 0, done };
   } catch {
-    return { id: READING[0].id, page: 0, done: [] };
+    return START;
   }
 }
 export function writeProgress(p) {

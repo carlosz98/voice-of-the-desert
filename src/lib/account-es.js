@@ -230,4 +230,5 @@ export const ACCOUNT_ES = {
   "No picture to remove": "No hay foto que quitar",
   "Your picture (optional)": "Su foto (opcional)",
   "Only if you add one. It's shown next to your comments, so anyone can see it. You can change or remove it anytime in My account.": "Solo si agrega una. Se ve junto a sus comentarios, así que cualquiera puede verla. La puede cambiar o quitar cuando quiera en Mi cuenta.",
+  "Some videos Felipe shares come from YouTube. Nothing loads from YouTube until you press play.": "Algunos videos que comparte Felipe vienen de YouTube. No se carga nada de YouTube hasta que usted toca reproducir.",
 };

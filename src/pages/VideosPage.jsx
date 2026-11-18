@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { youtubeId } from "../lib/tools.js";
 import { HOST, PHOTOS, VIDEO_FILTERS } from "../lib/data.js";
 import { useContent, useDetail } from "../lib/content.jsx";
 import Loading from "../components/Loading.jsx";
@@ -154,6 +155,37 @@ function DemoPlayer({ video }) {
   );
 }
 
+/* A YouTube video Felipe shared by link. Nothing loads from YouTube until
+ * the visitor presses play (faster page, and no YouTube cookies before that);
+ * then the video plays here, from youtube-nocookie.com. */
+function YouTubePlayer({ video, id }) {
+  const { t } = useLang();
+  const [on, setOn] = useState(false);
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-[20px] bg-night shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
+      {on ? (
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`}
+          title={t(video.title)}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="absolute inset-0 h-full w-full"
+        />
+      ) : (
+        <>
+          <img src={video.photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-night/70 via-night/10 to-transparent" />
+          <button type="button" onClick={() => setOn(true)} aria-label={t("Play video")} className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-cream/95 text-umber shadow-xl transition-transform duration-300 hover:scale-105">
+            <Play className="ml-1 h-7 w-7" fill="currentColor" />
+          </button>
+          <span className="absolute bottom-4 left-4 rounded-full bg-night/70 px-3 py-1.5 text-xs text-haze backdrop-blur">{t("Plays from YouTube")}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* /videos/:slug */
 export function VideoPage() {
   const { slug } = useParams();
@@ -186,7 +218,7 @@ export function VideoPage() {
             <ChevronRight aria-hidden className="h-4 w-4" />
             <Link to="/videos" className="hover:text-gold">{t("Videos")}</Link>
           </nav>
-          <DemoPlayer video={video} />
+          {youtubeId(video.videoUrl) ? <YouTubePlayer video={video} id={youtubeId(video.videoUrl)} /> : <DemoPlayer video={video} />}
         </div>
       </div>
 

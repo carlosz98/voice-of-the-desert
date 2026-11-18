@@ -73,6 +73,7 @@ export default function PrivacyPage() {
             <h2 id="others-h" className="h-display text-[clamp(26px,3.2vw,38px)]">{t("Other services the site uses")}</h2>
             <ul className="flex list-disc flex-col gap-2 pl-6 text-[17px] leading-relaxed text-loam">
               <li>{t("The Bible text comes from getBible.net, and the Chihuahua weather from Open-Meteo. Your browser asks them directly; we don't send them anything about you.")}</li>
+              <li>{t("Some videos Felipe shares come from YouTube. Nothing loads from YouTube until you press play.")}</li>
               <li>{t("Your browser remembers a few things on your device: that you're signed in, your language, the text size, and your place in the Bible.")}</li>
             </ul>
           </section>

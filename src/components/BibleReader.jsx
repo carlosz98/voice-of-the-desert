@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BookmarkCheck, BookOpen, Check, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
+import { ArrowRight, BookmarkCheck, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, RotateCw, Star } from "lucide-react";
 import { useLang } from "../lib/i18n.jsx";
-import { READING, loadChapter, readProgress, writeProgress } from "../lib/verses.js";
+import { BOOKS, FAVORITES, OLD_TESTAMENT, bookName, chapterCount, loadChapter, nextChapter, readProgress, writeProgress } from "../lib/verses.js";
 
 // roughly how much text fits on one page of the book (wide screens / phones)
 const PAGE_CHARS = { wide: 520, narrow: 360 };
@@ -160,7 +160,10 @@ function BlankPage() {
   return <div className="h-full rounded-[6px] bg-[#F6EEDD] shadow-[inset_0_0_40px_rgba(107,85,68,0.18)]" />;
 }
 
-/* An open book: pick a chapter, turn the pages, and save your place. */
+const idOf = ({ book, chapter }) => `${book}-${chapter}`;
+
+/* An open book: pick any book and chapter of the Bible, turn the pages,
+ * and save your place. */
 export default function BibleReader() {
   const { t, lang } = useLang();
   const wide = useWide();
@@ -171,7 +174,7 @@ export default function BibleReader() {
   const [page, setPage] = useState(progress.page || 0);
   const [flip, setFlip] = useState(null); // a page in the middle of turning: { dir, to }
   const [saved, setSaved] = useState(false);
-  const current = READING.find(r => r.id === progress.id) || READING[0];
+  const current = { book: progress.book, chapter: progress.chapter };
 
   useEffect(() => {
     let alive = true;
@@ -211,54 +214,94 @@ export default function BibleReader() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const choose = id => {
-    const p = { ...progress, id, page: 0 };
+  // open a chapter (and remember it, so the visitor comes back to it)
+  const open = ({ book, chapter: ch }) => {
+    const p = { ...progress, book, chapter: ch, page: 0 };
     setProgress(p);
+    writeProgress(p);
     setPage(0);
     setFlip(null);
     setSaved(false);
   };
 
   const save = () => {
-    const done = last && !progress.done.includes(current.id) ? [...progress.done, current.id] : progress.done;
-    const p = { ...progress, id: current.id, page: at, done };
+    const id = idOf(current);
+    const done = last && !progress.done.includes(id) ? [...progress.done, id] : progress.done;
+    const p = { ...progress, page: at, done };
     setProgress(p);
     writeProgress(p);
     setSaved(true);
   };
 
-  const doneCount = progress.done.length;
+  const name = (book, ch) => `${bookName(book, lang)} ${ch}`;
+  const following = nextChapter(current);
+  const chapters = chapterCount(current.book);
+  const doneHere = progress.done.filter(id => id.startsWith(`${current.book}-`)).length;
+  const select = "h-12 w-full appearance-none rounded-xl border border-dune bg-cream pl-4 pr-10 text-[17px] font-semibold outline-none focus:border-gold focus:ring-2 focus:ring-gold/40";
 
   return (
     <div className="flex flex-col gap-8">
-      {/* chapters */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <span className="text-sm font-semibold text-bark">{t("Choose a chapter")}</span>
-          <span className="text-sm text-bark">
-            {doneCount} / {READING.length} {t("chapters read")}
-          </span>
-        </div>
-        <div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-dune">
-          <motion.div className="h-full rounded-full bg-gold" animate={{ width: `${(doneCount / READING.length) * 100}%` }} transition={{ duration: 0.8 }} />
-        </div>
-        <div role="group" aria-label={t("Choose a chapter")} className="flex flex-wrap gap-2">
-          {READING.map(r => {
-            const on = r.id === current.id;
-            const done = progress.done.includes(r.id);
+      {/* favorites */}
+      <div className="flex flex-col gap-2.5">
+        <span className="flex items-center gap-1.5 text-sm font-semibold text-bark"><Star aria-hidden className="h-4 w-4 text-ochre" /> {t("Favorites")}</span>
+        <div role="group" aria-label={t("Favorites")} className="flex flex-wrap gap-2">
+          {FAVORITES.map(r => {
+            const on = idOf(r) === idOf(current);
+            const done = progress.done.includes(idOf(r));
             return (
-              <button
-                key={r.id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => choose(r.id)}
-                className={`pill border font-semibold ${on ? "border-umber bg-umber text-bone" : "border-dune hover:border-umber"}`}
-              >
+              <button key={idOf(r)} type="button" aria-pressed={on} onClick={() => open(r)} className={`pill border font-semibold ${on ? "border-umber bg-umber text-bone" : "border-dune hover:border-umber"}`}>
                 {done && <Check aria-hidden className={`h-4 w-4 ${on ? "text-gold" : "text-ochre"}`} />}
-                {t(BOOK_NAMES[r.book])} {r.chapter}
+                {name(r.book, r.chapter)}
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* the whole Bible: a book, then a chapter */}
+      <div className="flex flex-col gap-4 rounded-[20px] border border-dune bg-cream/60 p-4 sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <label className="flex min-w-[220px] flex-1 flex-col gap-1.5 sm:max-w-[340px]">
+            <span className="text-sm font-semibold text-bark">{t("The whole Bible: choose a book")}</span>
+            <span className="relative">
+              <select value={current.book} onChange={e => open({ book: Number(e.target.value), chapter: 1 })} className={select}>
+                <optgroup label={t("Old Testament")}>
+                  {BOOKS.slice(0, OLD_TESTAMENT).map((b, i) => <option key={i} value={i + 1}>{lang === "es" ? b[0] : b[1]}</option>)}
+                </optgroup>
+                <optgroup label={t("New Testament")}>
+                  {BOOKS.slice(OLD_TESTAMENT).map((b, i) => <option key={i} value={OLD_TESTAMENT + i + 1}>{lang === "es" ? b[0] : b[1]}</option>)}
+                </optgroup>
+              </select>
+              <ChevronDown aria-hidden className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-bark" />
+            </span>
+          </label>
+          <span className="text-sm text-bark tabular-nums">
+            {doneHere} / {chapters} {t("chapters read")} · {progress.done.length} {t("in all")}
+          </span>
+        </div>
+        <div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-dune">
+          <motion.div className="h-full rounded-full bg-gold" animate={{ width: `${(doneHere / chapters) * 100}%` }} transition={{ duration: 0.8 }} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-semibold text-bark">{t("Chapter")}</span>
+          <div role="group" aria-label={`${bookName(current.book, lang)}: ${t("Chapter")}`} className="flex max-h-[148px] flex-wrap gap-1.5 overflow-y-auto pr-1">
+            {Array.from({ length: chapters }, (_, i) => i + 1).map(n => {
+              const on = n === current.chapter;
+              const done = progress.done.includes(`${current.book}-${n}`);
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  aria-pressed={on}
+                  aria-label={`${name(current.book, n)}${done ? ` (${t("read")})` : ""}`}
+                  onClick={() => open({ book: current.book, chapter: n })}
+                  className={`grid h-10 min-w-10 place-items-center rounded-full px-2 text-[15px] font-semibold tabular-nums transition-colors ${on ? "bg-umber text-bone" : done ? "bg-gold/25 text-umber hover:bg-gold/40" : "border border-dune bg-cream hover:border-umber"}`}
+                >
+                  {n}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -311,11 +354,13 @@ export default function BibleReader() {
           <span aria-live="polite">{saved ? (last ? t("Chapter finished!") : t("Place saved")) : last ? t("Mark as read") : t("Save my place")}</span>
         </button>
       </div>
+      {chapter && last && following && (
+        <button type="button" onClick={() => open(following)} className="group mx-auto flex min-h-[52px] items-center gap-2 rounded-full bg-gold px-6 font-semibold text-umber transition-transform hover:-translate-y-0.5">
+          {t("Next chapter")}: {name(following.book, following.chapter)}
+          <ArrowRight aria-hidden className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+        </button>
+      )}
       <p className="text-center text-xs text-bark">{t("Your place is saved on this device only.")}</p>
     </div>
   );
 }
-
-// book numbers → English names (translated by i18n); the API gives the
-// translated name for the open chapter, these are for the buttons
-const BOOK_NAMES = { 19: "Psalms", 20: "Proverbs", 43: "John", 46: "1 Corinthians" };

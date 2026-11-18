@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BookOpen, Check, ChevronRight, Clapperboard, Eye, EyeOff, FileText, Home as HomeIcon, ImagePlus, LogOut,
+  BookOpen, Check, ChevronRight, Clapperboard, Eye, EyeOff, FileText, Home as HomeIcon, ImagePlus, LifeBuoy, LogOut,
   Inbox, MessageCircle, Mic, Music, NotebookPen, Plus, Send, Trash2, Upload, X,
 } from "lucide-react";
 import { ReviewDesk, usePendingCount } from "../components/Submissions.jsx";
@@ -16,6 +16,8 @@ import { Navigate } from "react-router-dom";
 import { StoryCard } from "../components/news/parts.jsx";
 import { VideoCard } from "../pages/VideosPage.jsx";
 import NextEpisode from "../components/NextEpisode.jsx";
+import { HappeningNow, MusicFinder, NewsFinder, WriteHelper, YouTubeLink } from "../components/panel/Helpers.jsx";
+import Guide from "../components/panel/Guide.jsx";
 
 /* ───────────────────────────────────────────────────────────────────────
  * Felipe's panel (/panel).
@@ -35,6 +37,7 @@ const SECTIONS = [
   { id: "note", icon: NotebookPen, label: "Quick note" },
   { id: "comments", icon: MessageCircle, label: "Comments" },
   { id: "submissions", icon: Inbox, label: "Submissions" },
+  { id: "guide", icon: LifeBuoy, label: "Guide" },
 ];
 
 const PHOTO_CHOICES = Object.entries(PHOTOS);
@@ -207,7 +210,7 @@ function Editor({ title, intro, form, preview }) {
 
 /* ───────── sections ───────── */
 
-function Overview({ go, recent, pending }) {
+function Overview({ go, recent, pending, onWrite }) {
   const { t } = useLang();
   const g = greetingFor();
   const content = useContent();
@@ -260,6 +263,8 @@ function Overview({ go, recent, pending }) {
           </motion.button>
         )}
       </AnimatePresence>
+
+      <HappeningNow onWrite={onWrite} />
 
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(([label, n]) => (
@@ -318,15 +323,34 @@ function Overview({ go, recent, pending }) {
           <div className="mt-2 w-fit rounded-2xl bg-night p-1.5"><NextEpisode /></div>
         </section>
       </div>
+
+      <button type="button" onClick={() => go("guide")} className="group flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-bark/40 px-5 py-4 text-left transition-colors hover:border-umber">
+        <span className="grid h-12 w-12 flex-none place-items-center rounded-full bg-gold/20 text-ochre"><LifeBuoy aria-hidden className="h-6 w-6" /></span>
+        <span className="flex-1">
+          <strong className="block text-lg">{t("How does everything work?")}</strong>
+          <span className="text-[15px] text-loam">{t("Open the guide: each tool explained step by step.")}</span>
+        </span>
+        <ChevronRight aria-hidden className="h-6 w-6 transition-transform group-hover:translate-x-1" />
+      </button>
     </div>
   );
 }
 
-function ArticleForm({ onPublish }) {
+/* start: a story chosen on "What's happening today" (fills the form) */
+function ArticleForm({ onPublish, start }) {
   const { t } = useLang();
   const [kind, setKind] = useState("News with my take");
-  const [f, setF] = useState({ category: "Local", title: "", summary: "", source: "", link: "", body: "", take: "", photo: PHOTOS.cathedral });
+  const [f, setF] = useState({
+    category: "Local", title: start?.title || "", summary: "", source: (start?.source || "").replace(/ \(demo\)$/, ""), link: start?.link || "", body: "", take: "", photo: PHOTOS.cathedral,
+  });
+  const [about, setAbout] = useState(start ? { title: start.title, source: start.source } : null); // the news he chose, for the writing helper
   const set = k => e => setF(x => ({ ...x, [k]: e?.target ? e.target.value : e }));
+  const fill = draft => setF(x => ({ ...x, ...draft }));
+  // a story from the search → its headline, newspaper and link
+  const pickStory = s => {
+    setF(x => ({ ...x, title: s.title, source: s.source.replace(/ \(demo\)$/, ""), link: s.link }));
+    setAbout({ title: s.title, source: s.source });
+  };
   const isNews = kind === "News with my take";
   const preview = {
     title: f.title || t("Your title shows here"),
@@ -340,6 +364,18 @@ function ArticleForm({ onPublish }) {
       form={
         <>
           <Field label={t("What are you writing?")}><Choice options={["News with my take", "My own article"]} value={kind} onChange={setKind} label={t("What are you writing?")} /></Field>
+          {isNews && !start && <NewsFinder onPick={pickStory} />}
+          {start && (
+            <p className="flex items-start gap-2 rounded-xl bg-gold/15 px-4 py-3 text-[15px] font-semibold sm:col-span-2">
+              <Check aria-hidden className="mt-0.5 h-5 w-5 flex-none text-ochre" /> {t("Done: the title, newspaper and link are filled in below. Now write your opinion.")}
+            </p>
+          )}
+          <WriteHelper
+            kind={isNews ? "news" : "article"}
+            about={isNews ? about : null}
+            current={isNews ? { title: f.title, summary: f.summary, take: f.take } : { title: f.title, summary: f.summary, body: f.body }}
+            onDraft={fill}
+          />
           <Field label={t("Topic")}><Choice options={NEWS_FILTERS.filter(x => x !== "All")} value={f.category} onChange={set("category")} label={t("Topic")} /></Field>
           <Field label={t("Title")}><input className={input} value={f.title} onChange={set("title")} placeholder={t("e.g. The night market is back in the Plaza de Armas")} /></Field>
           <Field label={t("Short summary")} hint={t("One or two sentences. It shows under the title.")}><textarea rows={2} className={area} value={f.summary} onChange={set("summary")} /></Field>
@@ -386,8 +422,10 @@ function ArticleForm({ onPublish }) {
 
 function VideoForm({ onPublish }) {
   const { t } = useLang();
-  const [f, setF] = useState({ title: "", description: "", note: "", photo: PHOTOS.adobe, file: null });
+  const [f, setF] = useState({ title: "", description: "", note: "", photo: PHOTOS.adobe, file: null, videoUrl: null });
   const set = k => e => setF(x => ({ ...x, [k]: e?.target ? e.target.value : e }));
+  // a YouTube link → its title and picture (and no file needed)
+  const pickYouTube = v => setF(x => ({ ...x, videoUrl: v.video_url, photo: v.thumbnail, title: v.title || x.title }));
   const preview = { slug: "preview", title: f.title || t("Your title shows here"), creator: HOST.name, views: "0 views", length: "0:00", ago: "Just now", isNew: true, photo: f.photo, pos: "50% 50%" };
   return (
     <Editor
@@ -395,7 +433,9 @@ function VideoForm({ onPublish }) {
       intro="Add a video and a note so people know why you're sharing it."
       form={
         <>
-          <FileDrop label={t("Video file")} accept="video/*" hint="MP4 / MOV" file={f.file} onFile={set("file")} />
+          <YouTubeLink onPick={pickYouTube} />
+          {!f.videoUrl && <FileDrop label={t("Or upload a video file")} accept="video/*" hint="MP4 / MOV" file={f.file} onFile={set("file")} />}
+          <WriteHelper kind="video" current={{ title: f.title, description: f.description, note: f.note }} onDraft={d => setF(x => ({ ...x, ...d }))} />
           <Field label={t("Title")}><input className={input} value={f.title} onChange={set("title")} placeholder={t("e.g. Sunrise over the Sierra")} /></Field>
           <Field label={t("Description")}><textarea rows={3} className={area} value={f.description} onChange={set("description")} /></Field>
           <Field label={t("Your note")}><textarea rows={3} className={`${area} border-gold/60 bg-[#FFF8E9] font-serif text-[20px] italic`} value={f.note} onChange={set("note")} placeholder={t("Why are you sharing this video?")} /></Field>
@@ -406,7 +446,7 @@ function VideoForm({ onPublish }) {
               onPublish({
                 kind: "Upload video",
                 title: f.title,
-                save: () => writes.addVideo({ title: f.title.trim(), description: f.description.trim() || null, note: f.note.trim() || null, photo: photoForDb(f.photo), from_who: "felipe" }),
+                save: () => writes.addVideo({ title: f.title.trim(), description: f.description.trim() || null, note: f.note.trim() || null, photo: photoForDb(f.photo), video_url: f.videoUrl, from_who: "felipe" }),
               })
             }
           />
@@ -424,7 +464,13 @@ function VideoForm({ onPublish }) {
 
 function SongForm({ onPublish }) {
   const { t } = useLang();
-  const [f, setF] = useState({ title: "", artist: "", album: "", genre: "Ranchera", photo: PHOTOS.sunset, file: null, lists: [] });
+  const [f, setF] = useState({ title: "", artist: "", album: "", genre: "Ranchera", photo: PHOTOS.sunset, file: null, lists: [], seconds: null });
+  // a song from the search → its name, artist, album, cover and length
+  const pickSong = s =>
+    setF(x => ({
+      ...x, title: s.title, artist: s.artist, album: s.album, seconds: s.seconds, photo: s.artwork || x.photo,
+      genre: GENRES.includes(s.genre) ? s.genre : x.genre, // only the site's genres
+    }));
   const set = k => e => setF(x => ({ ...x, [k]: e?.target ? e.target.value : e }));
   const toggle = id => setF(x => ({ ...x, lists: x.lists.includes(id) ? x.lists.filter(l => l !== id) : [...x.lists, id] }));
   return (
@@ -433,6 +479,7 @@ function SongForm({ onPublish }) {
       intro="Add a song to the site and to your playlists."
       form={
         <>
+          <MusicFinder onPick={pickSong} />
           <FileDrop label={t("Song file")} accept="audio/*" hint="MP3 / WAV" file={f.file} onFile={set("file")} />
           <Field label={t("Song title")}><input className={input} value={f.title} onChange={set("title")} placeholder="Viento del norte" /></Field>
           <Field label={t("Artist")} wide={false}><input className={input} value={f.artist} onChange={set("artist")} /></Field>
@@ -461,7 +508,7 @@ function SongForm({ onPublish }) {
                     artist: f.artist.trim() || HOST.name,
                     album: f.album.trim() || null,
                     genre: f.genre,
-                    length_seconds: (await durationOf(f.file)) || 180,
+                    length_seconds: (await durationOf(f.file)) || f.seconds || 180,
                     photo: photoForDb(f.photo),
                   }),
               })
@@ -502,6 +549,7 @@ function PodcastForm({ onPublish }) {
           <Field label={t("Episode title")}><input className={input} value={f.title} onChange={set("title")} /></Field>
           <Field label={t("Guest")} wide={false}><input className={input} value={f.guest} onChange={set("guest")} /></Field>
           <Field label={t("Who is the guest?")} wide={false}><input className={input} value={f.role} onChange={set("role")} placeholder={t("e.g. Guitar maker in Delicias")} /></Field>
+          <WriteHelper kind="episode" current={{ summary: f.summary, note: f.note }} onDraft={d => setF(x => ({ ...x, ...d }))} />
           <Field label={t("What is the episode about?")}><textarea rows={3} className={area} value={f.summary} onChange={set("summary")} /></Field>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <span className="text-[15px] font-bold text-umber">{t("Chapters")}</span>
@@ -569,6 +617,7 @@ function VerseForm({ onPublish }) {
         <>
           <Field label={t("Verse")} hint={t("e.g. Salmos 23:1")}><input className={input} value={f.reference} onChange={set("reference")} placeholder="Salmos 23:1" /></Field>
           <Field label={t("Text of the verse")} hint={t("Copy it from your Bible, as you want it to appear.")}><textarea rows={3} className={`${area} font-serif text-[20px] italic`} value={f.text} onChange={set("text")} placeholder="Jehová es mi pastor; nada me faltará." /></Field>
+          <WriteHelper kind="verse" about={f.reference.trim() ? { reference: f.reference, text: f.text } : null} current={{ reflection: f.reflection }} onDraft={d => setF(x => ({ ...x, ...d }))} />
           <Field label={t("Your reflection")}><textarea rows={4} className={area} value={f.reflection} onChange={set("reflection")} placeholder={t("What does this verse say to you today?")} /></Field>
           <Field label={t("When should it appear?")}><Choice options={["Now", "Tomorrow morning"]} value={f.when} onChange={set("when")} label={t("When should it appear?")} /></Field>
           <Actions
@@ -619,6 +668,7 @@ function NoteForm({ onPublish }) {
       intro="A few words for your desk, like a message to your listeners."
       form={
         <>
+          <WriteHelper kind="note" current={{ text }} onDraft={d => setText(d.text ?? "")} />
           <Field label={t("Your note")}><textarea rows={5} className={`${area} font-serif text-[20px] italic`} value={text} onChange={e => setText(e.target.value)} placeholder={t("Good morning to everyone. Today…")} /></Field>
           <div className="sm:col-span-2"><PhotoPicker value={photo} onChange={setPhoto} /></div>
           {photo && <button type="button" onClick={() => setPhoto(null)} className="flex w-fit items-center gap-1.5 text-sm font-semibold text-bark hover:text-umber"><X aria-hidden className="h-4 w-4" /> {t("No photo")}</button>}
@@ -772,6 +822,7 @@ export default function PanelPage() {
   const { isFelipe, signOut } = useAuth();
   const [section, setSection] = useState("home");
   const [recent, setRecent] = useState([]);
+  const [story, setStory] = useState(null); // chosen on "What's happening today"
   const [pending, refreshPending] = usePendingCount();
   const { live, reload } = useContent();
 
@@ -801,13 +852,14 @@ export default function PanelPage() {
     return result;
   };
   const go = id => {
+    if (id !== "article") setStory(null);
     setSection(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const forms = {
-    home: <Overview go={go} recent={recent} pending={pending} />,
-    article: <ArticleForm onPublish={publish} />,
+    home: <Overview go={go} recent={recent} pending={pending} onWrite={s => { setStory(s); setSection("article"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />,
+    article: <ArticleForm key={story?.link || "new"} onPublish={publish} start={story} />,
     video: <VideoForm onPublish={publish} />,
     song: <SongForm onPublish={publish} />,
     podcast: <PodcastForm onPublish={publish} />,
@@ -815,6 +867,7 @@ export default function PanelPage() {
     note: <NoteForm onPublish={publish} />,
     comments: <CommentsDesk />,
     submissions: <ReviewDesk onChange={refreshPending} />,
+    guide: <Guide go={go} />,
   };
 
   return (
