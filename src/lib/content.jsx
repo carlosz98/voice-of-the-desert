@@ -56,6 +56,7 @@ export const shapeComment = c => ({
   userId: c.user_id,
   name: c.name,
   host: !!c.is_felipe,
+  avatar: c.avatar || null, // the writer's picture
   ago: agoFrom(c.created_at),
   text: c.text,
   live: true, // written by a real person: shown exactly as typed, not translated
@@ -292,6 +293,7 @@ export const writes = {
   addEpisode: data => call("episodes.php", { method: "POST", body: data }).then(shapeEpisode),
   addDesk: data => call("desk.php", { method: "POST", body: data }).then(shapeDesk),
   recentComments: () => call("comments.php", { params: { recent: 1 } }),
+  removeAvatar: userId => call("avatars.php", { method: "DELETE", params: { user: userId } }),
   setVerse: data => call("verses.php", { method: "POST", body: data }),
   // anyone
   subscribe: email => call("newsletter.php", { method: "POST", body: { email } }),

@@ -11,6 +11,7 @@ import { Reveal } from "../components/ui/Reveal.jsx";
 
 const KEPT = [
   ["Your account", "Your name, email and town (if you give it), so you can sign in and so your name shows next to your comments."],
+  ["Your picture (optional)", "Only if you add one. It's shown next to your comments, so anyone can see it. You can change or remove it anytime in My account."],
   ["What you write", "Comments, song dedications, messages to Felipe and what you send from the Upload page."],
   ["The letter", "Your email, only if you join The caravan letter."],
   ["Signing in", "A random sign-in ticket, so you don't have to type your password on every page. It ends when you sign out or after 30 days."],

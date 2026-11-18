@@ -137,6 +137,26 @@ check "no verse from Felipe yet = 404" "404" "$(code "$A/verses.php?day=2030-01-
 check "bad date refused" "400" "$(code "$A/verses.php?day=2030-02-31")"
 check "visitors can't set a verse" "401" "$(code -X POST -H "$J" -d '{"day":"2030-01-01","reference":"x","text":"x"}' $A/verses.php)"
 
+echo "--- profile pictures"
+PNG=$(php -r '$i=imagecreatetruecolor(40,40); imagefill($i,0,0,imagecolorallocate($i,212,160,74)); ob_start(); imagepng($i); echo "data:image/png;base64,".base64_encode(ob_get_clean());' 2>/dev/null || echo "")
+if [ -z "$PNG" ]; then PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="; fi
+r=$(curl -s -X POST -H "$J" -d "{\"name\":\"Con Foto\",\"email\":\"foto@example.com\",\"password\":\"cactus123\",\"avatar\":\"$PNG\"}" $A/register.php)
+check "register with a photo" '"avatar":"data:image/png;base64,' "$r"
+FT=$(echo "$r" | field token); FH="Authorization: Bearer $FT"
+r=$(curl -s -X POST -H "$J" -d '{"name":"Con Dibujo","email":"dibujo@example.com","password":"cactus123","avatar":"preset:cactus"}' $A/register.php)
+check "register with a drawing" '"avatar":"preset:cactus"' "$r"
+check "unknown drawing refused" "400" "$(code -X POST -H "$J" -d '{"name":"x","email":"x1@example.com","password":"cactus123","avatar":"preset:skull"}' $A/register.php)"
+check "not an image refused" "400" "$(code -X POST -H "$J" -d "{\"name\":\"x\",\"email\":\"x2@example.com\",\"password\":\"cactus123\",\"avatar\":\"data:image/png;base64,$(printf '<script>alert(1)</script>' | base64 -w0)\"}" $A/register.php)"
+check "a web link refused" "400" "$(code -X POST -H "$J" -d '{"name":"x","email":"x3@example.com","password":"cactus123","avatar":"https://evil.example/x.png"}' $A/register.php)"
+BIG=$(php -r '$i=imagecreatetruecolor(800,800); ob_start(); imagepng($i); echo "data:image/png;base64,".base64_encode(ob_get_clean());' 2>/dev/null)
+[ -n "$BIG" ] && check "too large (800x800) refused" "400" "$(code -X POST -H "$J" -d "{\"name\":\"x\",\"email\":\"x4@example.com\",\"password\":\"cactus123\",\"avatar\":\"$BIG\"}" $A/register.php)"
+r=$(curl -s -X POST -H "$FH" -H "$J" -d '{"type":"article","id":2,"text":"Mi primera foto"}' $A/comments.php); check "new comment carries my picture" '"avatar":"data:image/png' "$r"
+r=$(curl -s "$A/articles.php?slug=$($SQL "SELECT slug FROM articles WHERE id=2")"); check "comments list shows pictures" '"avatar":"data:image/png' "$r"
+r=$(curl -s -X PUT -H "$FH" -H "$J" -d '{"avatar":"preset:guitar"}' $A/account.php); check "change to a drawing" '"avatar":"preset:guitar"' "$r"
+r=$(curl -s -X PUT -H "$FH" -H "$J" -d '{"avatar":null}' $A/account.php); check "remove my picture" '"avatar":null' "$r"
+check "visitor can't remove others' pictures" "401" "$(code -X DELETE "$A/avatars.php?user=2")"
+check "user can't remove others' pictures" "403" "$(code -X DELETE -H "$FH" "$A/avatars.php?user=2")"
+
 echo "--- my account"
 r=$(curl -s -H "$UH" $A/account.php); check "account details" '"comment_count":0' "$r"
 check "account counts submissions" '"submission_count":1' "$r"
@@ -185,6 +205,8 @@ r=$(curl -s -X POST -H "$H" -H "$J" -d '{"day":"2030-01-01","reference":"Juan 3:
 check "still one verse that day" "1" "$($SQL "SELECT COUNT(*) FROM verses WHERE day='2030-01-01'")"
 r=$(curl -s -H "$H" "$A/verses.php?upcoming=1&from=2029-12-01"); check "felipe sees upcoming verses" '"day":"2030-01-01"' "$r"
 r=$(curl -s -H "$H" $A/newsletter.php); check "felipe sees the letter list" '"email":"lector@example.com"' "$r"
+check "felipe removes a picture" "200" "$(code -X DELETE -H "$H" "$A/avatars.php?user=2")"
+check "Rosa's picture is gone" "NULL" "$($SQL "SELECT IFNULL(avatar,'NULL') FROM users WHERE id=2")"
 check "felipe account can't be deleted" "403" "$(code -X DELETE -H "$H" -H "$J" -d "{\"password\":\"$FP\"}" $A/account.php)"
 
 echo "--- security: sign-in, tickets, SQL injection"

@@ -28,10 +28,11 @@ if (method() === 'GET') {
     if (isset($_GET['recent'])) {
         only_felipe();
         send(query(
-            "SELECT c.id, c.item_type, c.item_id, c.user_id, c.name, c.text, c.created_at,
+            "SELECT c.id, c.item_type, c.item_id, c.user_id, c.name, c.text, c.created_at, u.avatar,
                     COALESCE(a.title, v.title, e.title) AS item_title,
                     COALESCE(a.slug,  v.slug,  e.slug)  AS item_slug
                FROM comments c
+               LEFT JOIN users    u ON u.id = c.user_id
                LEFT JOIN articles a ON c.item_type = 'article' AND a.id = c.item_id
                LEFT JOIN videos   v ON c.item_type = 'video'   AND v.id = c.item_id
                LEFT JOIN episodes e ON c.item_type = 'episode' AND e.id = c.item_id
@@ -61,7 +62,8 @@ if (method() === 'POST') {
         [$type, $itemId, $me['id'], $me['name'], $text, $me['role'] === 'felipe' ? 1 : 0]
     );
     $id = (int)db()->lastInsertId();
-    send(query('SELECT id, user_id, name, text, is_felipe, created_at FROM comments WHERE id = ?', [$id])->fetch(), 201);
+    $saved = query('SELECT id, user_id, name, text, is_felipe, created_at FROM comments WHERE id = ?', [$id])->fetch();
+    send($saved + ['avatar' => $me['avatar'] ?? null], 201);
 }
 
 if (method() === 'DELETE') {

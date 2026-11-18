@@ -2,7 +2,7 @@
 /* ============================================================
  *  register.php: create an account
  *
- *  POST register.php  {"name": "Rosa M.", "email": "...", "password": "...", "town": "Delicias"}
+ *  POST register.php  {"name": "Rosa M.", "email": "...", "password": "...", "town": "Delicias", "avatar": "..."}
  *     → makes the account and signs them in right away
  *       (answers with a token, same as login.php)
  *
@@ -20,6 +20,7 @@ $in       = need(['name' => 100, 'email' => 150]);
 $email    = strtolower($in['email']);
 $password = (string)(input()['password'] ?? '');   // exactly as typed: never trimmed
 $town     = mb_substr(trim((string)(input()['town'] ?? '')), 0, 100) ?: null;
+$avatar   = avatar_value(input()['avatar'] ?? null);   // optional picture, checked
 
 if ($password === '') fail('Missing: password');
 kind_text($in['name'], $town);                 // no bad words in names (_words.json)
@@ -32,8 +33,8 @@ if (query('SELECT 1 FROM users WHERE email = ?', [$email])->fetch()) {
 // password_hash() turns the password into a bcrypt hash we can store safely.
 // role is written here as 'user' by us: it never comes from the visitor.
 query(
-    "INSERT INTO users (name, email, password_hash, role, town) VALUES (?, ?, ?, 'user', ?)",
-    [$in['name'], $email, password_hash($password, PASSWORD_DEFAULT), $town]
+    "INSERT INTO users (name, email, password_hash, role, town, avatar) VALUES (?, ?, ?, 'user', ?, ?)",
+    [$in['name'], $email, password_hash($password, PASSWORD_DEFAULT), $town, $avatar]
 );
 $user = query('SELECT * FROM users WHERE id = ?', [(int)db()->lastInsertId()])->fetch();
 

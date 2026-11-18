@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Eye, EyeOff, LayoutDashboard, LogOut, MessageCircle, Music, PenLine, Trash2, UploadCloud, UserRound } from "lucide-react";
 import { MySubmissions } from "../components/Submissions.jsx";
+import { AvatarPicker, UserAvatar } from "../components/Avatar.jsx";
 import { kindCheck } from "../lib/kind-words.js";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, initials } from "../lib/auth.jsx";
@@ -149,7 +150,7 @@ function SignInForm({ onDone, switchTo }) {
 function RegisterForm({ onDone, switchTo }) {
   const { t } = useLang();
   const { register } = useAuth();
-  const [form, setForm] = useState({ name: "", email: "", town: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", town: "", password: "", avatar: null });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const set = k => e => setForm(f => ({ ...f, [k]: typeof e === "string" ? e : e.target.value }));
@@ -175,6 +176,8 @@ function RegisterForm({ onDone, switchTo }) {
       <Field label={t("Name")} hint={t("(it shows next to your comments)")}>
         <input required maxLength={100} autoComplete="name" value={form.name} onChange={set("name")} className={field} />
       </Field>
+      {/* optional picture: a photo (made small here) or one of the drawings */}
+      <AvatarPicker name={form.name} value={form.avatar} onChange={avatar => setForm(f => ({ ...f, avatar }))} />
       <Field label={t("Email")} hint={t("(nobody else sees it)")}>
         <input type="email" required maxLength={150} autoComplete="email" inputMode="email" value={form.email} onChange={set("email")} className={field} />
       </Field>
@@ -351,13 +354,14 @@ function Saved({ show }) {
 
 function ProfileCard() {
   const { t } = useLang();
-  const { user, update } = useAuth();
+  const { user, isFelipe, update } = useAuth();
   const [name, setName] = useState(user.name);
   const [town, setTown] = useState(user.town || "");
+  const [avatar, setAvatar] = useState(user.avatar || null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
-  const changed = name.trim() !== user.name || town.trim() !== (user.town || "");
+  const changed = name.trim() !== user.name || town.trim() !== (user.town || "") || avatar !== (user.avatar || null);
 
   const submit = async e => {
     e.preventDefault();
@@ -366,7 +370,7 @@ function ProfileCard() {
     setBusy(true);
     setError("");
     try {
-      await update({ name, town });
+      await update({ name, town, avatar });
       setSaved(true);
       setTimeout(() => setSaved(false), 2200);
     } catch (err) {
@@ -378,6 +382,7 @@ function ProfileCard() {
   return (
     <Card title={t("Your details")}>
       <form onSubmit={submit} className="flex flex-col gap-4">
+        {!isFelipe && <AvatarPicker name={name} value={avatar} onChange={setAvatar} />}
         <Field label={t("Name")}>
           <input required maxLength={100} value={name} onChange={e => setName(e.target.value)} className={field} />
         </Field>
@@ -528,13 +533,8 @@ function SignedIn({ back }) {
         <img src={PHOTOS.sunset} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" style={{ objectPosition: "50% 60%" }} />
         <div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,rgba(35,26,21,0.85)_0%,rgba(35,26,21,0.55)_45%,#231A15_100%)]" />
         <div className="container-x relative flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-          <motion.span
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-gold font-display text-3xl font-semibold ${isFelipe ? "" : "bg-gold/20 text-gold"}`}
-          >
-            {isFelipe ? <img src={HOST.face} alt="" className="h-full w-full object-cover" /> : initials(user.name)}
+          <motion.span initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
+            <UserAvatar name={user.name} avatar={user.avatar} host={isFelipe} size={80} onDark />
           </motion.span>
           <div className="flex flex-col gap-1.5">
             <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: EASE }} className="h-display text-[clamp(34px,5vw,60px)]">
@@ -592,7 +592,7 @@ export default function AccountPage() {
   return user ? <SignedIn back={back} /> : <SignedOut back={back} />;
 }
 
-/* Small round button for the menu bar: "Sign in", or your initials */
+/* Small round button for the menu bar: "Sign in", or your picture */
 export function AccountButton({ className = "" }) {
   const { t } = useLang();
   const { user, isFelipe } = useAuth();
@@ -604,8 +604,8 @@ export function AccountButton({ className = "" }) {
     );
   }
   return (
-    <Link to="/cuenta" aria-label={`${t("Your account")}: ${user.name}`} title={user.name} className={`inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-gold bg-gold/20 font-display text-[15px] font-semibold text-gold transition-transform hover:-translate-y-0.5 ${className}`}>
-      {isFelipe ? <img src={HOST.face} alt="" className="h-full w-full object-cover" /> : initials(user.name)}
+    <Link to="/cuenta" aria-label={`${t("Your account")}: ${user.name}`} title={user.name} className={`inline-flex shrink-0 rounded-full transition-transform hover:-translate-y-0.5 ${className}`}>
+      <UserAvatar name={user.name} avatar={user.avatar} host={isFelipe} size={44} onDark />
     </Link>
   );
 }

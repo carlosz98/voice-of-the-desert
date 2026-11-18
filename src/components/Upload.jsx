@@ -12,6 +12,7 @@ import { useAuth, initials } from "../lib/auth.jsx";
 import { submissions, LIVE } from "../lib/api.js";
 import { kindCheck } from "../lib/kind-words.js";
 import { writes } from "../lib/content.jsx";
+import { UserAvatar } from "./Avatar.jsx";
 import { Link } from "../lib/router.jsx";
 
 export const KINDS = [
@@ -121,9 +122,7 @@ function SubmitForm({ onSent }) {
     >
       {/* who it's from */}
       <div className="flex items-center gap-3 rounded-2xl bg-bone px-4 py-3">
-        <span className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full border-2 border-gold bg-gold/20 font-display text-sm font-semibold text-ochre">
-          {isFelipe ? <img src={HOST.face} alt="" className="h-full w-full object-cover" /> : initials(user.name)}
-        </span>
+        <UserAvatar name={user.name} avatar={user.avatar} host={isFelipe} size={40} />
         <p className="min-w-0 flex-1 text-[15px] text-loam">
           {t("Sending as")} <strong className="text-umber">{user.name}</strong>
           {user.town && <span className="text-bark"> · {user.town}</span>}

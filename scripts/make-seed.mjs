@@ -71,7 +71,7 @@ add("-- Felipe is user 1, with role 'felipe'. His password is not in this file, 
 add("-- A visitor account for testing: rosa@example.com / demo1234");
 add("-- (only the hashes are stored; change both before going live)");
 add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (1, 'Felipe Lerma', 'felipe@example.com', ${q(hashOf(felipePassword))}, 'felipe', 'Chihuahua');`);
-add(`INSERT INTO users (id, name, email, password_hash, role, town) VALUES (2, 'Rosa M.', 'rosa@example.com', ${q(hashOf("demo1234"))}, 'user', 'Chihuahua');`);
+add(`INSERT INTO users (id, name, email, password_hash, role, town, avatar) VALUES (2, 'Rosa M.', 'rosa@example.com', ${q(hashOf("demo1234"))}, 'user', 'Chihuahua', 'preset:sun');`);
 add("");
 
 // comments are added after their item, using the id MySQL just gave it.

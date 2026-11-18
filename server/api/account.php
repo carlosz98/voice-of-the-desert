@@ -3,7 +3,7 @@
  *  account.php: your own account (you must be signed in)
  *
  *  GET    account.php                         → your details + how many comments and submissions
- *  PUT    account.php  {"name": "...", "town": "..."}           → change your name or town
+ *  PUT    account.php  {"name": "...", "town": "...", "avatar": "..."} → change your name, town or picture
  *  PUT    account.php  {"current_password": "...", "new_password": "..."} → change password
  *  DELETE account.php  {"password": "..."}    → delete your account and your comments
  * ============================================================ */
@@ -50,8 +50,11 @@ if (method() === 'PUT') {
     if (array_key_exists('town', $in)) {
         $changes['town'] = mb_substr(trim((string)$in['town']), 0, 100) ?: null;
     }
+    if (array_key_exists('avatar', $in)) {
+        $changes['avatar'] = avatar_value($in['avatar']);   // null removes the picture
+    }
     kind_text($changes['name'] ?? null, $changes['town'] ?? null); // no bad words in names
-    if ($changes) save('users', ['name', 'town'], $changes, $me['id']);
+    if ($changes) save('users', ['name', 'town', 'avatar'], $changes, $me['id']);
 
     send(public_user(my_row($me['id'])));
 }

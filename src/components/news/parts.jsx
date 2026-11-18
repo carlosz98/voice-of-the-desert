@@ -4,6 +4,7 @@ import { Camera, Link2, MessageCircle, Mic, Music, NotebookPen, Send } from "luc
 import { HOST, NEXT_POST } from "../../lib/data.js";
 import { useContent, writes } from "../../lib/content.jsx";
 import { kindCheck } from "../../lib/kind-words.js";
+import { UserAvatar } from "../Avatar.jsx";
 import { useLang } from "../../lib/i18n.jsx";
 import { Link } from "../../lib/router.jsx";
 import { useLocation } from "react-router-dom";
@@ -26,12 +27,9 @@ export function Avatar({ size = 40, className = "" }) {
   );
 }
 
-function ReaderAvatar({ name }) {
-  return (
-    <span aria-hidden className="grid h-9 w-9 flex-none place-items-center rounded-full bg-dune font-display text-sm font-semibold text-loam">
-      {name[0]}
-    </span>
-  );
+// a reader's picture next to their comment (their photo, drawing or initials)
+function ReaderAvatar({ name, avatar }) {
+  return <UserAvatar name={name} avatar={avatar} size={36} ring={false} />;
 }
 
 /* ───────── Story card (grid) ───────── */
@@ -114,7 +112,7 @@ export function Comments({ story, idPrefix = "c" }) {
     if (unkind) return setError(unkind);
     if (!live) {
       // DEMO: stays on this page only
-      setExtra(x => [...x, { id: Date.now(), name: user.name, host: isFelipe, ago: "Just now", text, mine: true }]);
+      setExtra(x => [...x, { id: Date.now(), name: user.name, avatar: user.avatar, host: isFelipe, ago: "Just now", text, mine: true }]);
       setDraft("");
       return;
     }
@@ -157,7 +155,7 @@ export function Comments({ story, idPrefix = "c" }) {
               exit={{ opacity: 0, height: 0 }}
               className={`flex gap-3 ${c.host ? "ml-8 sm:ml-12" : ""}`}
             >
-              {c.host ? <Avatar size={36} /> : <ReaderAvatar name={c.name} />}
+              {c.host ? <Avatar size={36} /> : <ReaderAvatar name={c.name} avatar={c.avatar} />}
               <div className={`flex-1 rounded-2xl px-4 py-3 ${c.host ? "bg-umber text-bone" : "bg-cream"}`}>
                 <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
                   <strong className="text-[15px]">{c.mine ? c.name : t(c.name)}</strong>

@@ -5,6 +5,7 @@ import {
   Inbox, MessageCircle, Mic, Music, NotebookPen, Plus, Send, Trash2, Upload, X,
 } from "lucide-react";
 import { ReviewDesk, usePendingCount } from "../components/Submissions.jsx";
+import { UserAvatar } from "../components/Avatar.jsx";
 import { ALL_STORIES, ALL_VIDEOS, EPISODES, GENRES, HOST, NEWS_FILTERS, PHOTOS, PLAYLISTS, TRACKS } from "../lib/data.js";
 import { agoFrom, useContent, writes } from "../lib/content.jsx";
 import { dayNumber, isoDay } from "../lib/verses.js";
@@ -689,6 +690,17 @@ function CommentsDesk() {
     setReplies(r => ({ ...r, [c.key]: text }));
   };
 
+  // LIVE: an inappropriate profile picture → Felipe removes it (initials show instead)
+  const removePicture = async c => {
+    setError("");
+    try {
+      await writes.removeAvatar(c.user_id);
+    } catch (err) {
+      return setError(err.message);
+    }
+    setLiveList(l => l.map(x => (x.user_id === c.user_id ? { ...x, avatar: null } : x)));
+  };
+
   // LIVE: hiding deletes the comment from the site (Felipe can delete any)
   const hide = async c => {
     setError("");
@@ -715,7 +727,15 @@ function CommentsDesk() {
       <ul className="flex flex-col gap-4">
         {all.map(c => (
           <li key={c.key} className={`rounded-[20px] bg-bone p-5 ring-1 ring-dune transition-opacity ${hidden[c.key] ? "opacity-50" : ""}`}>
-            <p className="text-sm text-bark"><strong className="text-umber">{c.name}</strong> · {t(c.ago)} · {t("on")} <em>{t(c.where)}</em></p>
+            <div className="flex items-center gap-3">
+              <UserAvatar name={c.name} avatar={c.avatar} size={36} ring={false} />
+              <p className="min-w-0 flex-1 text-sm text-bark"><strong className="text-umber">{c.name}</strong> · {t(c.ago)} · {t("on")} <em>{t(c.where)}</em></p>
+              {live && c.avatar && c.user_id && (
+                <button type="button" onClick={() => removePicture(c)} className="text-sm font-semibold text-bark underline underline-offset-4 hover:text-[#9A3412]">
+                  {t("Remove picture")}
+                </button>
+              )}
+            </div>
             <p className="mt-1.5 text-[17px] leading-relaxed">{t(c.text)}</p>
             {replies[c.key] ? (
               <p className="mt-3 flex items-start gap-2 rounded-xl bg-umber p-3 text-bone"><img src={HOST.face} alt="" className="h-7 w-7 rounded-full" /> {replies[c.key]}</p>

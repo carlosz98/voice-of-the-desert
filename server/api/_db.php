@@ -210,6 +210,32 @@ function kind_text(?string ...$texts): void
     }
 }
 
+/* ---------- Profile pictures ----------
+ * avatar_value($v) checks what the website sent for a picture:
+ *   null / ""             → no picture (initials are shown)
+ *   "preset:cactus"       → one of the site's drawings
+ *   "data:image/...;base64,..." → a small photo. It must really be an image
+ *                           (PHP opens it to check), at most 512×512 and 100 KB.
+ * Anything else is refused, so nobody can sneak in a script or a huge file. */
+const AVATAR_PRESETS = ['cactus', 'sun', 'mountain', 'guitar', 'bird', 'moon', 'coffee', 'cross'];
+
+function avatar_value($v): ?string
+{
+    if ($v === null || $v === '') return null;
+    if (!is_string($v)) fail('That picture can\'t be used.');
+    if (preg_match('/^preset:([a-z]+)$/', $v, $m)) {
+        if (!in_array($m[1], AVATAR_PRESETS, true)) fail('That picture can\'t be used.');
+        return $v;
+    }
+    if (!preg_match('#^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$#', $v, $m)) fail('That picture can\'t be used.');
+    $bytes = base64_decode($m[2], true);
+    if ($bytes === false || strlen($bytes) > 100 * 1024) fail('That picture is too big.');
+    $info = @getimagesizefromstring($bytes);       // is it really an image?
+    if (!$info || !in_array($info['mime'], ['image/jpeg', 'image/png', 'image/webp'], true)) fail('That picture can\'t be used.');
+    if ($info[0] > 512 || $info[1] > 512) fail('That picture is too big.');
+    return $v;
+}
+
 // The value must be one from the list (for ENUM columns like genre)
 //   one_of($data, 'genre', ['Norteño', 'Bolero', ...])
 function one_of(array $data, string $field, array $allowed): void
@@ -294,7 +320,7 @@ function current_user(): ?array
     if (!$token) return null;
 
     $user = query(
-        'SELECT u.id, u.name, u.email, u.role, u.town, u.created_at
+        'SELECT u.id, u.name, u.email, u.role, u.town, u.avatar, u.created_at
            FROM sessions s JOIN users u ON u.id = s.user_id
           WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()',
         [token_hash($token)]
@@ -352,6 +378,7 @@ function public_user(array $u): array
         'email' => $u['email'],
         'role'  => $u['role'],
         'town'  => $u['town'] ?? null,
+        'avatar' => $u['avatar'] ?? null,
         'member_since' => $u['created_at'] ?? null, // "Miembro desde..."
     ];
 }
@@ -360,9 +387,10 @@ function public_user(array $u): array
 function comments_for(string $type, int $id): array
 {
     return query(
-        'SELECT id, user_id, name, text, is_felipe, created_at
-           FROM comments WHERE item_type = ? AND item_id = ?
-          ORDER BY created_at, id',
+        'SELECT c.id, c.user_id, c.name, c.text, c.is_felipe, c.created_at, u.avatar
+           FROM comments c LEFT JOIN users u ON u.id = c.user_id   -- the writer\'s picture
+          WHERE c.item_type = ? AND c.item_id = ?
+          ORDER BY c.created_at, c.id',
         [$type, $id]
     )->fetchAll();
 }

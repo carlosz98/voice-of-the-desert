@@ -96,7 +96,7 @@ async function demoUsers() {
     // the same two accounts as the database's 02_seed.sql
     users = [
       { id: 1, name: "Felipe Lerma", email: "felipe@example.com", role: "felipe", town: "Chihuahua", hash: FELIPE_DEMO_HASH, created_at: "2026-10-01T12:00:00Z" },
-      { id: 2, name: "Rosa M.", email: "rosa@example.com", role: "user", town: "Chihuahua", hash: await hash("demo1234"), created_at: "2026-10-02T12:00:00Z" },
+      { id: 2, name: "Rosa M.", email: "rosa@example.com", role: "user", town: "Chihuahua", avatar: "preset:sun", hash: await hash("demo1234"), created_at: "2026-10-02T12:00:00Z" },
     ];
     saveDemoUsers(users);
   }
@@ -105,7 +105,19 @@ async function demoUsers() {
 function saveDemoUsers(users) {
   try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch {}
 }
-const publicUser = u => ({ id: u.id, name: u.name, email: u.email, role: u.role, town: u.town || null, member_since: u.created_at });
+const publicUser = u => ({ id: u.id, name: u.name, email: u.email, role: u.role, town: u.town || null, avatar: u.avatar || null, member_since: u.created_at });
+
+// same rule as avatar_value() in _db.php: a drawing, or a small photo
+const PRESET_IDS = ["cactus", "sun", "mountain", "guitar", "bird", "moon", "coffee", "cross"];
+function checkAvatar(v) {
+  if (!v) return null;
+  if (typeof v === "string" && v.startsWith("preset:") && PRESET_IDS.includes(v.slice(7))) return v;
+  if (typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)) {
+    if (v.length > 140000) throw new ApiError("That picture is too big.", 400);
+    return v;
+  }
+  throw new ApiError("That picture can't be used.", 400);
+}
 const newToken = () => [...crypto.getRandomValues(new Uint8Array(32))].map(b => b.toString(16).padStart(2, "0")).join("");
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 
@@ -118,7 +130,7 @@ async function demoMe() {
 }
 
 const demo = {
-  async register({ name, email, password, town }) {
+  async register({ name, email, password, town, avatar }) {
     await wait();
     name = (name || "").trim();
     email = (email || "").trim().toLowerCase();
@@ -128,7 +140,7 @@ const demo = {
     if (new TextEncoder().encode(password).length > 72) throw new ApiError("The password can be at most 72 characters.", 400);
     const users = await demoUsers();
     if (users.some(u => u.email === email)) throw new ApiError("There is already an account with that email. Try signing in.", 409);
-    const user = { id: Math.max(...users.map(u => u.id)) + 1, name, email, role: "user", town: (town || "").trim() || null, hash: await hash(password), created_at: new Date().toISOString() };
+    const user = { id: Math.max(...users.map(u => u.id)) + 1, name, email, role: "user", town: (town || "").trim() || null, avatar: checkAvatar(avatar), hash: await hash(password), created_at: new Date().toISOString() };
     saveDemoUsers([...users, user]);
     return { token: newToken(), user: publicUser(user) };
   },
@@ -164,6 +176,7 @@ const demo = {
       u.name = name;
     }
     if (changes.town !== undefined) u.town = changes.town.trim() || null;
+    if (changes.avatar !== undefined) u.avatar = checkAvatar(changes.avatar);
     saveDemoUsers(users);
     return publicUser(u);
   },

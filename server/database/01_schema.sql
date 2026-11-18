@@ -52,6 +52,9 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   role          ENUM('user','felipe') NOT NULL DEFAULT 'user',
   town          VARCHAR(100),                   -- optional: "Delicias", "Parral"...
+  avatar        MEDIUMTEXT,                     -- optional picture: a small photo saved as text
+                                                -- ("data:image/webp;base64,...", ~10 KB) or one of
+                                                -- the site's drawings ("preset:cactus"). NULL = initials
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME
 );
